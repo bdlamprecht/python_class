@@ -1,0 +1,19 @@
+- hosts: localhost
+  vars:
+    hostsname: rch-vsc-a
+  tasks:
+    - name: Generate configuration file
+      template: src=/home/bl839s/ansible/week5/vSCa-vba-lo-6880.txt
+                dest=/home/bl839s/ansible/cfgs/rch-vsc-a.txt
+    - name: Generate configuration file
+      template: src=/home/bl839s/ansible/week5/vSCa-vba-lo-6880.txt
+                dest=/home/bl839s/ansible/cfgs/rch-vsc-a.txt
+    - name: Generate configuration file
+      template: src=/home/bl839s/ansible/week5/vSCa-vba-lo-6880.txt
+                dest=/home/bl839s/ansible/cfgs/rch-vsc-a.txt
+
+
+ - hosts: webservers
+   tasks:
+    - name: do something
+      some_action

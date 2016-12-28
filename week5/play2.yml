@@ -1,0 +1,13 @@
+---
+- hosts: local
+  tasks:
+    - name: Generate configuration file
+      template: src=/home/bl839s/ansible/vSCa-vba-lo-6880.item.j2
+                dest=/home/bl839s/ansible/cfgs/{{item.site_prefix}}-vsc-a.txt
+      with_items:
+        - site_prefix: bld
+        - site_prefix: pok
+        - site_prefix: sms
+        - site_prefix: rtp
+        - site_prefix: hpr
+

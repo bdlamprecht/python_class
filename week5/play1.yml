@@ -1,0 +1,9 @@
+---
+- hosts: local
+  vars:
+    site_prefix: rch
+  tasks:
+    - name: Generate configuration file
+      template: src=/home/bl839s/ansible/vSCa-vba-lo-6880.j2
+                dest=/home/bl839s/ansible/cfgs/rch-vsc-a.txt
+

@@ -1,0 +1,10 @@
+[local]
+localhost ansible_connection=local
+
+[ios]
+rch-vsc-a ansible_ssh_host=9.88.128.5 ansible_ssh_user=rwuser
+rch-vsc-b ansible_ssh_host=9.88.128.6 ansible_ssh_user=rwuser
+
+[juniper]
+hpr-ecd-a ansible_ssh_host=9.88.254.5 ansible_ssh_user=bl839s ansible_ssh_port=22
+hpr-ecd-b ansible_ssh_host=9.88.254.5 ansible_ssh_user=bl839s ansible_ssh_port=22
