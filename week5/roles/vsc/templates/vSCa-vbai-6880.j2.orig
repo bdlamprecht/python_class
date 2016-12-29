@@ -1,0 +1,3962 @@
+! vSCa 6880-X-LE vBA-CE Inline Configuration Template - IOS 15.2(1)SY1a Advanced Enterprise Services
+! Template Version IGA Global 16.1.1  2016/09/09
+! Template Status: Current
+! Created by CTC 4.1.4
+!
+! Change Log:
+!     2016/09/09   Added support for block scope, other corrections
+!     2016/09/09   Added support for IPv6 native peering
+!     2016/05/27   New Template 16.1.0
+!
+! Variable Definitions (some variables may not be applicable for this configuration)
+!
+! a  = First octet of an IP address
+! a4 = First octet of site IP address allocation for a VRF
+! b  = Second octet of an IP address
+! b1 = Second octet of global management site IP address allocation
+! b2 = Second octet of first blue site IP address allocation
+! b3 = Second octet of blue infrastructure IP address range allocated to this core
+! b4 = Second octet of site IP address allocation for a VRF
+! b6 = Second octet of site IP address allocation for VRF acc.y1
+! c  = Third octet of an IP address
+! c2 = Third octet of EMEA legacy infrastructure/management subnet containing the border slot
+! c4 = Third octet of site IP address allocation for a VRF
+! c6 = Third octet of site IP address allocation for VRF acc.y1
+! c9 = Third octet of IP address range allocated to Power 9 CE routers for blue VPN
+! d  = Fourth octet of an IP address
+! d1 = Device offset within IP address range allocated to Power 9 CE routers for CE-a loopback
+! d2 = Device offset within IP address range allocated to Power 9 CE routers for CE-b loopback
+! m  = Mask: mm = bit-count notation, mmm = decimal notation
+! n  = D-block number of connected D-blocks
+! q1 = 0, when n = 1-15; 1, when n = 16-30; 2, when n = 31-45
+! q4 = 1, when n = 1-30; 31, when n = 31-45
+! r  = Region index; 1 for Americas; 2 for EMEA; 3 for AP
+! s  = Fourth octet of an IP subnet address
+! x  = Third octet of first global management site IP address allocation
+! x1 = Third octet of first global D-block IP address range allocated to this core; x1 = x
+! x2 = Third octet of first blue site IP address allocation
+! x3 = Third octet of first blue infrastructure IP address range allocated to this core for n = 1-30
+! x4 = Third octet of site infrastructure IP address allocation for a VRF
+! x6 = Third octet of VRF acc.y1 site IP address allocation used for infrastructure
+! x8 = Third octet of global infrastructure IP address ranges allocated for B-slots
+! x9 = Third octet of blue infrastructure IP address range allocated for uplinks to Power 9
+! y  = Third octet of additional global management site IP address allocation
+! y1 = Third octet of second global D-block IP address range allocated to this core
+! y3 = Third octet of second blue infrastructure IP address range allocated to this core for n = 31-45
+! z1 = x1, when n = 1-15; y1, when n = 16-30; x1+1, when n = 31-45
+! z2 = x2 for legacy BC Americas; x2+1 for legacy BD Americas; x2+4 for legacy SC Americas; c2 for EMEA legacy
+!
+! dslot  = Fourth octet of start of D-block slot allocated to a D-block
+!          16 * (n - 15q1)
+!
+! dslot1 = Fourth octet of blue infrastructure IP address range allocated to a D-block
+!          8 * (n - q4)
+!
+! lslot1 = Fourth octet of start of legacy IP address range for uplinks
+!          0 for Americas/AP; 16 for EMEA
+!
+! vslot  = Fourth octet of start of VRF infrastructure IP address range
+!
+! vslot1 = Fourth octet of start of WAN VPN infrastructure slot IP address range
+!          vslot + 32 when CE slot used; vslot + 0 otherwise
+!
+! wslot  = Start of VRF WAN VLAN number range for links to CE
+!
+! h3b    = Third hextet of IPv6 address allocated to the site for blue routing domain
+!          bin 00rr rsss ssss ssss; rrr = region, sssssssssss = site allocation
+!
+! h4dhcp = Fourth hextet of IPv6 address allocated to the site for blue DHCPv6 services (first IPv6 DDI allocation)
+!          hex 8d[2-digit DDI allocation from spreadsheet]
+!
+! n2d    = IPv6 mapped D-block number, used in vxD templates
+!
+! Additional Terms:
+!
+! VRF name   = full name of VRF, identifies VRF in configuration (assigned by VPN admin)
+!              [VRF prefix].[zone ID][VRF index] (except for "blue" and "1net")
+! VRF prefix = 3-character acronym/identifier for network/application utilizing VRFs
+! VRF index  = 1-digit index number of VRF within network/application zone category
+! VPN name   = single-term identifier of VPN used in descriptions, usually the same as VRF name
+! VPNID      = 3-digit number assigned to a VRF/VPN (assigned by VPN admin)
+!              Global: 100-530 by 10, regional: (100-530 by 10)+r, per-site/site-local: 540-899, block-local: 910-959
+! VPNRM      = route-map stanza number offset for rm_static_to_bgp_vrf and rm_conn_to_bgp_vrf
+!              VPNID multiplied by 10
+! VPNINDEX   = 2- or 3-digit number derived from VPNID used for loopback interface numbering
+!              VPNID divided by 10 (integer division with no remainder) for global/regional VPN
+!              VPNID for per-site/site-local/block-local VPN/VRF
+! zone       = security zone color designation used in descriptions
+!              blue, green, yellow, red, gray
+! zone ID    = 1-character security zone identifier used in VRF name
+!              b for blue, g for green, y for yellow, r for red, a for gray
+! zone tag   = 1-digit security zone idenifier used in BGP community tag
+!              See BGP communities spreadsheet
+!
+! Tables/spreadsheets/calculators for getting values for template variables (RESO ID, management tools
+! addresses, VLAN type index, etc.) can be found at the following URL:
+!   https://businesssolutions.web.att.com/sites/IBM-GAS/sharepoint/html/iga-docs-templatevariables.html
+!
+! Reference documents describing the usage of this template can be found at the following URL:
+!   https://businesssolutions.web.att.com/sites/IBM-GAS/sharepoint/html/iga-docs-technicalnotes.html
+!
+! Reference documents describing overall architecture and design can be found at the following URL:
+!   https://businesssolutions.web.att.com/sites/IBM-GAS/sharepoint/html/iga-docs.html
+!
+! Internal/External BGP passwords and OSPF authentication keys to be requested via standard process.
+!
+!-----------------------------------------------------------------------------!
+!
+! Run-once commands, require reload to take effect.
+! Commands do NOT appear in running configuration, verify with show commands.
+!
+! Do NOT add to startup configuration.
+!
+! config-register 0x2102
+! crypto key zeroize rsa
+! crypto key generate rsa usage-keys label sshkey.[site prefix]-vsc-a.attmgmt.ibm.com modulus 2048
+! clock timezone UTC 0
+!
+! These commands DO appear in running configuration and are included in startup.
+!
+! vtp domain [site prefix]
+! vtp mode transparent
+!
+! End run-once commands
+!
+!-----------------------------------------------------------------------------!
+!
+version 15.2
+no service pad
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+service password-encryption
+service counters max age 10
+no service dhcp
+!
+hostname [site prefix]-vsc-a
+!
+boot-start-marker
+boot system bootdisk:c6880x-adventerprisek9-mz.SPA.152-1.SY1a.bin
+boot system bootdisk:
+boot-end-marker
+!
+! Apply one of the following VRF definitions for each VRF required - order by VRF name A-Z
+!
+! VRF for global Yellow Access VPN, if required
+!
+vrf definition acc.y1
+ description IGA Yellow Access Network - Global VPN - [WAN service] [ICORE VPN Name]
+ rd 9.[b1.x1].5:210
+ route-target export 8:210
+ route-target import 8:210
+ !
+ address-family ipv4
+  import map rm_from_vpn_af
+ exit-address-family
+!
+! VRF for global Blue VPN - apply always
+!
+vrf definition blue
+ description IGA Internal Network Blue - Global VPN - [WAN service] [ICORE VPN Name]
+ rd 9.[b1.x1].5:100
+ route-target export 8:100
+ route-target import 8:100
+ !
+ address-family ipv4
+  import map rm_from_vpn_af
+ exit-address-family
+ !
+ address-family ipv6
+  import map rm_from_vpn_af
+ exit-address-family
+!
+! VRF for global Transport VPN, if any
+!
+vrf definition [VRF name]
+ description [VRF description] - Global Transport VPN - [WAN service] [ICORE VPN Name]
+ rd 9.[b1.x1].5:[VPNID]
+ route-target export 8:[VPNID]
+ route-target import 8:[VPNID]
+ !
+ address-family ipv4
+  import map rm_from_vpn_af
+ exit-address-family
+!
+! VRF for global/regional Global Stub VPN, if any
+!
+vrf definition [VRF name]
+ description [VRF description] - [Global|Regional] Stub VPN - [WAN service] [ICORE VPN Name]
+ rd 9.[b1.x1].5:[VPNID]
+ route-target export 8:[VPNID]
+ route-target import 8:[VPNID]
+ !
+ address-family ipv4
+  import map rm_from_vpn_af
+ exit-address-family
+!
+! End of VRF definitions
+!
+vlan internal reserved met vlan 1024
+logging userinfo
+logging buffered 1024000 informational
+no logging console
+enable secret [local enable password]
+!
+username failsafe secret [local password]
+aaa new-model
+!
+!
+aaa group server tacacs+ GTAC
+ !
+ ! Specify "port [TCP port from spreadsheet]" in the following commands if TCP port is other than the default 49
+ !
+ server-private [GTAC server 1 IP address from spreadsheet] < port [TCP port from spreadsheet] > timeout 6 key [GTAC administrator assigned key]
+ server-private [GTAC server 2 IP address from spreadsheet] < port [TCP port from spreadsheet] > timeout 6 key [GTAC administrator assigned key]
+ !
+ ip tacacs source-interface Loopback0
+!
+aaa authentication attempts login 5
+aaa authentication fail-message ^Failed login. Five consecutive fails will revoke.^
+aaa authentication login default group GTAC local
+aaa authentication enable default group GTAC enable
+aaa authorization console
+aaa authorization config-commands
+aaa authorization exec default group GTAC if-authenticated 
+aaa authorization commands 15 default group GTAC none 
+aaa accounting exec default start-stop group GTAC
+aaa accounting commands 15 default start-stop group GTAC
+aaa accounting connection default start-stop group GTAC
+aaa accounting system default start-stop group GTAC
+no aaa accounting system guarantee-first
+!
+!
+!
+!
+!
+!
+aaa session-id common
+platform ip cef load-sharing ip-only
+platform qos queueing-only 
+no platform rate-limit unicast acl vacl_log 
+!
+!
+!
+!
+!
+fhrp version vrrp v3
+no ip source-route
+!
+ip vrf management
+!
+!
+no ip bootp server
+no ip domain-lookup
+ip domain-name attmgmt.ibm.com
+ip name-server [DNS server 1 IP address from spreadsheet]
+ip name-server [DNS server 2 IP address from spreadsheet]
+login on-failure log
+login on-success log
+ipv6 unicast-routing
+ipv6 multicast rpf use-bgp
+vtp domain [site prefix]
+vtp mode transparent
+!
+table-map cos-discard-class-map
+ map from  0 to 0
+ map from  1 to 0
+ map from  2 to 18
+ map from  3 to 26
+ map from  4 to 0
+ map from  5 to 46
+ map from  6 to 48
+ map from  7 to 56
+table-map discard-class-cos-map
+ map from  8 9 10 11 12 13 14 15 to 0
+ map from  16 to 0
+ map from  17 to 0
+ map from  19 to 0
+ map from  21 to 0
+ map from  22 to 0
+ map from  23 to 0
+ map from  24 to 0
+ map from  25 to 0
+ map from  27 to 0
+ map from  29 to 0
+ map from  30 to 0
+ map from  31 to 0
+ map from  32 to 0
+ map from  33 to 0
+ map from  34 to 0
+ map from  35 to 0
+ map from  36 to 0
+ map from  37 to 0
+ map from  38 to 0
+ map from  39 to 0
+ map from  40 to 0
+ map from  41 to 0
+ map from  42 to 0
+ map from  43 to 0
+ map from  44 to 0
+ map from  45 to 0
+ map from  47 to 0
+ map from  49 to 0
+ map from  50 to 0
+ map from  51 to 0
+ map from  52 to 0
+ map from  53 to 0
+ map from  54 to 0
+ map from  55 to 0
+ map from  57 to 0
+ map from  58 to 0
+ map from  59 to 0
+ map from  60 to 0
+ map from  61 to 0
+ map from  62 to 0
+ map from  63 to 0
+!
+mpls label protocol ldp
+mpls label mode all-vrfs protocol all-afs per-vrf
+mpls ldp session protection
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+archive
+ log config
+  logging enable
+  notify syslog contenttype plaintext
+  hidekeys
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+spanning-tree vlan 1100-1999 priority 16384
+spanning-tree vlan 1100-1999 forward-time 6
+spanning-tree vlan 1100-1999 max-age 8
+!
+redundancy
+ main-cpu
+  auto-sync running-config
+ mode sso
+!
+vlan internal allocation policy ascending
+!
+vlan 1111
+ name vSC-CEa/blue/pri
+!
+vlan 1114
+ name vSC-CEb/blue/pri
+!
+! Apply the following two VLAN definitions for VRF acc.y1, if present (dual inverted Y topology)
+!
+vlan 1131
+ name vSC-CEa/acc.y1/pri
+!
+vlan 1134
+ name vSC-CEb/acc.y1/pri
+!
+! Repeat the following two VLAN definitions for each additional VRF present, if any (bowtie topology)
+!
+vlan [wslot+1]
+ name vSCa-CEa/[VRF name]
+!
+vlan [wslot+3]
+ name vSCa-CEb/[VRF name]
+!
+vlan 1511
+ name vSC-CEa/blue/alt_RA
+!
+vlan 1514
+ name vSC-CEb/blue/alt_RA
+!
+vlan 1981
+ name vSC-vBAa/global/xA_mgmt
+!
+vlan 1982
+ name vSC-vBAb/global/xA_mgmt
+!
+vlan 1991
+ name vSC-vBAa/blue/dev_mgmt
+!
+vlan 1992
+ name vSC-vBAb/blue/dev_mgmt
+!
+vlan 4094
+ name vSC/Null
+lldp run
+cdp timer 10
+cdp holdtime 30
+!
+ip tcp path-mtu-discovery
+!
+class-map match-all class-copp-glean
+class-map match-any class-copp-icmp-redirect-unreachable
+class-map match-all class-copp-receive
+class-map match-all class-copp-options
+class-map match-all class-copp-broadcast
+class-map match-all class-copp-mcast-acl-bridged
+class-map match-all class-copp-slb
+class-map match-all class-copp-arp-snooping
+class-map match-all class-copp-mtu-fail
+class-map match-all class-copp-ttl-fail
+class-map match-any class-copp-mcast-copy
+class-map match-any class-copp-ip-connected
+class-map match-any class-copp-match-igmp
+ match access-group name acl-copp-match-igmp
+class-map match-all class-copp-unknown-protocol
+class-map match-any class-copp-vacl-log
+class-map match-all class-copp-mcast-ipv6-control
+class-map match-any class-copp-match-pimv6-data
+class-map match-any class-copp-mcast-punt
+class-map match-all class-copp-unsupp-rewrite
+class-map match-all class-copp-ip-admission
+class-map match-all class-copp-ucast-egress-acl-bridged
+class-map match-any class-copp-dpss-divert
+class-map match-all class-copp-service-insertion
+class-map match-all class-copp-mac-pbf
+class-map match-any class-copp-match-mld
+class-map match-all class-copp-dhcp-snooping
+class-map match-all class-copp-ucast-ingress-acl-bridged
+class-map match-all class-copp-wccp
+class-map match-all class-copp-nd
+class-map match-any class-copp-ipv6-connected
+class-map match-all class-copp-mcast-rpf-fail
+class-map match-all class-copp-mcast-ip-control
+class-map match-any class-copp-ucast-rpf-fail
+class-map match-any class-copp-match-pim-data
+ match access-group name acl-copp-match-pim-data
+class-map match-any class-copp-match-ndv6
+class-map match-any class-copp-mcast-v4-data-on-routedPort
+class-map match-any class-copp-mcast-v6-data-on-routedPort
+!
+policy-map policy-default-autocopp
+ class class-copp-mcast-v4-data-on-routedPort
+   police rate 10 pps burst 1 packets    conform-action drop     exceed-action drop 
+ class class-copp-mcast-v6-data-on-routedPort
+   police rate 10 pps burst 1 packets    conform-action drop     exceed-action drop 
+ class class-copp-match-mld
+   police rate 10000 pps burst 10000 packets    conform-action set-discard-class-transmit 48    exceed-action transmit 
+ class class-copp-match-igmp
+   police rate 10000 pps burst 10000 packets    conform-action set-discard-class-transmit 48    exceed-action transmit 
+ class class-copp-icmp-redirect-unreachable
+   police rate 100 pps burst 10 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-ucast-rpf-fail
+   police rate 100 pps burst 10 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-vacl-log
+   police rate 2000 pps burst 1 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-mcast-punt
+   police rate 1000 pps burst 256 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-mcast-copy
+   police rate 1000 pps burst 256 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-ip-connected
+   police rate 1000 pps burst 256 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-ipv6-connected
+   police rate 1000 pps burst 256 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-match-pim-data
+   police rate 1000 pps burst 1000 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-match-pimv6-data
+   police rate 1000 pps burst 1000 packets    conform-action transmit     exceed-action transmit 
+ class class-copp-match-ndv6
+   police rate 1000 pps burst 1000 packets    conform-action set-discard-class-transmit 48    exceed-action transmit 
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ description [site prefix]/vSCa/lo0/global</[local description]>
+ ip address 9.[b1.x1].5 255.255.255.255
+ load-interval 60
+ no shutdown
+!
+interface Loopback1
+ description [site prefix]/vSCa/lo1/global/RR</[local description]>
+ ip address 9.[b1.x1].13 255.255.255.255
+ load-interval 60
+ no shutdown
+!
+interface Loopback2
+ description [site prefix]/vSCa/lo2/global</[local description]>
+ ip address 9.[b1.x1].7 255.255.255.255
+ load-interval 60
+ no shutdown
+!
+interface Loopback10
+ description [site prefix]/vSCa/lo10/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b3].[x3|y3].253 255.255.255.255
+ load-interval 60
+ !
+ ! Apply the following commands if IPv6 required at this site
+ !
+ ipv6 address FE80::A link-local
+ ipv6 address 2620:1F7:[h3b]::1B:A/128
+ !
+ no shutdown
+!
+! Apply the following interface definition for VRF acc.y1, if present
+!
+interface Loopback21
+ description [site prefix]/vSCa/lo21/acc.y1</[local description]>
+ vrf forwarding acc.y1
+ ip address 9.[b6.x6].105 255.255.255.255
+ load-interval 60
+ no shutdown
+!
+! Repeat the following interface definition for each additional VRF present, if any
+!
+interface Loopback[VPNINDEX]
+ description [site prefix]/vSCa/lo[VPNINDEX]/[VRF name]</[local description]>
+ vrf forwarding [VRF name]
+ ip address [a4.b4.x4.vslot1+9] 255.255.255.255
+ load-interval 60
+ no shutdown
+!
+interface Port-channel101
+ description [site prefix]/vSCa-vSCb/global/xlink</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1].1 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ ip ospf cost 5
+ logging event link-status
+ load-interval 60
+ mpls ip
+ flowcontrol send off
+ arp timeout 420
+ no shutdown
+!
+interface Tunnel0
+ description [site prefix]/vSCa/global-blue/tunnel
+ ip address 9.[b1.x1].8 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf cost 1000
+ load-interval 60
+ tunnel source 9.[b1.x1].5
+ tunnel destination 9.[b1.x1].7
+ no shutdown
+!
+interface Tunnel1
+ description [site prefix]/vSCa/blue-global/tunnel
+ vrf forwarding blue
+ ip address 9.[b1.x1].9 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ load-interval 60
+ tunnel source 9.[b1.x1].7
+ tunnel destination 9.[b1.x1].5
+ no shutdown
+!
+! Apply one of the following interface definitions for each port 1-16 in slot 1 (n=7-14; n2d=7-14), if module present
+!
+! Port option for slot 1 A-side (odd) ports - 10/1G D-block port (port=1-15; n=7-14), if any
+!
+interface TenGigabitEthernet1/[2*n-13]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]a/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+8] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 1 A-side (odd) ports - 10/1G Legacy SC/BC/BD port (port=1-15; n=7-14), if legacy uses n=7-14
+!
+interface TenGigabitEthernet1/[2*n-13]
+ description [site prefix]/vSCa-[SC|BC|BD]a/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+1] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 1 A-side (odd) ports - unused 10/1G port (port=1-15; n=7-14), if any
+!
+interface TenGigabitEthernet1/[2*n-13]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! Port option for slot 1 B-side (even) ports - 10/1G D-block port (port=2-16; n=7-14), if any
+!
+interface TenGigabitEthernet1/[2*n-12]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]b/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+10] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 1 B-side (even) ports - 10/1G Legacy SC/BC/BD port (port=2-16; n=7-14), if legacy uses n=7-14
+!
+interface TenGigabitEthernet1/[2*n-12]
+ description [site prefix]/vSCa-[SC|BC|BD]b/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+5] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 1 B-side (even) ports - unused 10/1G port (port=2-16; n=7-14), if any
+!
+interface TenGigabitEthernet1/[2*n-12]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! End of port options for slot 1
+!
+! Apply one of the following interface definitions for each port 1-16 in slot 2 (n=15-22 or 31-38; n2d=15-22), if module present
+!
+! Port option for slot 2 A-side (odd) ports - 10/1G D-block port (port=1-15; n=15-22 or 31-38), if any
+!
+interface TenGigabitEthernet2/[2*n-29|2*n-61]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]a/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+8] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 2 A-side (odd) ports - 10/1G Legacy SC/BC/BD port (port=1-15; n=15-22 or 31-38), if legacy uses n=15-22 or 31-38
+!
+interface TenGigabitEthernet2/[2*n-29|2*n-61]
+ description [site prefix]/vSCa-[SC|BC|BD]a/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+1] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 2 A-side (odd) ports - unused 10/1G port (port=1-15; n=15-22 or 31-38), if any
+!
+interface TenGigabitEthernet2/[2*n-29|2*n-61]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! Port option for slot 2 B-side (even) ports - 10/1G D-block port (port=2-16; n=15-22 or 31-38), if any
+!
+interface TenGigabitEthernet2/[2*n-28|2*n-60]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]b/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+10] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 2 B-side (even) ports - 10/1G Legacy SC/BC/BD port (port=2-16; n=15-22 or 31-38), if legacy uses n=15-22 or 31-38
+!
+interface TenGigabitEthernet2/[2*n-28|2*n-60]
+ description [site prefix]/vSCa-[SC|BC|BD]b/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+5] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 2 B-side (even) ports - unused 10/1G port (port=2-16; n=15-22 or 31-38), if any
+!
+interface TenGigabitEthernet2/[2*n-28|2*n-60]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! End of port options for slot 2
+!
+! Apply one of the following interface definitions for each port 1-16 in slot 3 (n=23-30 or 39-45; n2d=23-30), if module present
+!
+! Port option for slot 3 A-side (odd) ports - 10/1G D-block port (port=1-15; n=23-30 or 39-45), if any
+!
+interface TenGigabitEthernet3/[2*n-45|2*n-77]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]a/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+8] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 3 A-side (odd) ports - 10/1G Legacy SC/BC/BD port (port=1-15; n=23-30 or 39-45), if legacy uses n=23-30 or 39-45
+!
+interface TenGigabitEthernet3/[2*n-45|2*n-77]
+ description [site prefix]/vSCa-[SC|BC|BD]a/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+1] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 3 A-side (odd) ports - unused 10/1G port (port=1-15; n=23-30 or 39-45), if any
+!
+interface TenGigabitEthernet3/[2*n-45|2*n-77]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! Port option for slot 3 B-side (even) ports - 10/1G D-block port (port=2-16; n=23-30 or 39-45), if any
+!
+interface TenGigabitEthernet3/[2*n-44|2*n-76]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]b/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+10] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 3 B-side (even) ports - 10/1G Legacy SC/BC/BD port (port=2-16; n=23-30 or 39-45), if legacy uses n=23-30 or 39-45
+!
+interface TenGigabitEthernet3/[2*n-44|2*n-76]
+ description [site prefix]/vSCa-[SC|BC|BD]b/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+5] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 3 B-side (even) ports - unused 10/1G port (port=2-16; n=23-30 or 39-45), if any
+!
+interface TenGigabitEthernet3/[2*n-44|2*n-76]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! End of port options for slot 3
+!
+interface TenGigabitEthernet5/1
+ description [site prefix]/vSCa-vSCb.1/global/xlink</[local description]>
+ mtu 4486
+ no ip address
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ logging event link-status
+ logging event bundle-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+ flowcontrol receive off
+ channel-group 101 mode active
+ no shutdown
+!
+interface TenGigabitEthernet5/2
+ description [site prefix]/vSCa-vSCb.2/global/xlink</[local description]>
+ mtu 4486
+ no ip address
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ logging event link-status
+ logging event bundle-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+ flowcontrol receive off
+ channel-group 101 mode active
+ no shutdown
+!
+interface TenGigabitEthernet5/3
+ description [site prefix]/vSCa-vBAa/trunk</[local description]>
+ switchport
+ switchport trunk native vlan 4094
+ switchport mode trunk
+ switchport trunk allowed vlan [list of valid 1111,1131,wslot+1,1511,1981,1991 VLANs]
+ switchport nonegotiate
+ mtu 9216
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ no shutdown
+!
+interface TenGigabitEthernet5/4
+ description [site prefix]/vSCa-vBAb/trunk</[local description]>
+ switchport
+ switchport trunk native vlan 4094
+ switchport mode trunk
+ switchport trunk allowed vlan [list of valid 1114,1134,wslot+3,1514,1982,1992 VLANs]
+ switchport nonegotiate
+ mtu 9216
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ no shutdown
+!
+! Apply one of the following interface definitions for each port 5-16 in slot 5 (n=1-6; n2d=1-6)
+!
+! Port option for slot 5 A-side (odd) ports - 10/1G D-block port (1G port=5-7; 10/1G port=9-15; n=1-6)
+!
+interface TenGigabitEthernet5/[2*n+3]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]a/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+8] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 5 A-side (odd) ports - 10/1G Legacy SC/BC/BD port (1G port=5-7; 10/1G port=9-15; n=1-6), if legacy uses n=1-6
+!
+interface TenGigabitEthernet5/[2*n+3]
+ description [site prefix]/vSCa-[SC|BC|BD]a/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+1] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 5 A-side (odd) ports - unused 10/1G port (port=5-15; n=1-6), if any
+!
+interface TenGigabitEthernet5/[2*n+3]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! Port option for slot 5 B-side (even) ports - 10/1G D-block port (1G port=6-8; 10/1G port=10-16; n=1-6)
+!
+interface TenGigabitEthernet5/[2*n+4]
+ description [site prefix]/vSCa-[vDD|vID|vOD|vSD|vWD][n]b/global</[local description]>
+ mtu 4486
+ ip address 9.[b1.x1.dslot+10] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ ip mtu 4470
+ ip ospf authentication-key [network authentication key]
+ ip ospf network point-to-point
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+ mpls ip
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 5 B-side (even) ports - 10/1G Legacy SC/BC/BD port (1G port=6-8; 10/1G port=10-16; n=1-6), if legacy uses n=1-6
+!
+interface TenGigabitEthernet5/[2*n+4]
+ description [site prefix]/vSCa-[SC|BC|BD]b/blue</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.z2.lslot1+5] 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ platform qos queue-mode mode-dscp
+ udld port disable
+ wrr-queue bandwidth percent 13 17 26 44 0 0 0 
+ wrr-queue queue-limit 25 20 30 10 0 0 0 
+ wrr-queue random-detect min-threshold 1 60 60 60 60 
+ wrr-queue random-detect min-threshold 2 60 60 60 60 
+ wrr-queue random-detect min-threshold 3 60 60 60 60 
+ wrr-queue random-detect max-threshold 1 100 100 100 100 
+ wrr-queue random-detect max-threshold 2 100 100 100 100 
+ wrr-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ wrr-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ wrr-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ wrr-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ wrr-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ wrr-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ wrr-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ wrr-queue dscp-map 1 1 63 
+ wrr-queue dscp-map 2 1 26 28 
+ wrr-queue dscp-map 3 1 18 20 
+ wrr-queue dscp-map 4 1 48 56 
+ priority-queue dscp-map 1 46 
+ rcv-queue bandwidth percent 13 17 26 44 0 0 0 
+ rcv-queue queue-limit 25 20 30 10 0 0 0 
+ rcv-queue random-detect min-threshold 1 60 60 60 60 
+ rcv-queue random-detect min-threshold 2 60 60 60 60 
+ rcv-queue random-detect max-threshold 1 100 100 100 100 
+ rcv-queue dscp-map 1 1 0 1 2 3 4 5 6 7 
+ rcv-queue dscp-map 1 1 8 9 10 11 12 13 14 15 
+ rcv-queue dscp-map 1 1 16 17 19 21 22 23 24 25 
+ rcv-queue dscp-map 1 1 27 29 30 31 32 33 34 35 
+ rcv-queue dscp-map 1 1 36 37 38 39 40 41 42 43 
+ rcv-queue dscp-map 1 1 44 45 47 49 50 51 52 53 
+ rcv-queue dscp-map 1 1 54 55 57 58 59 60 61 62 
+ rcv-queue dscp-map 1 1 63 
+ rcv-queue dscp-map 2 1 26 28 
+ rcv-queue dscp-map 3 1 18 20 
+ rcv-queue dscp-map 4 1 48 56 
+< flowcontrol receive off >                       ! Apply if 10G SFP in use
+ arp timeout 420
+ no shutdown
+!
+! Port option for slot 5 B-side (even) ports - unused 10/1G port (port=6-16; n=1-6), if any
+!
+interface TenGigabitEthernet5/[2*n+4]
+ description ** Not In Use **
+ no ip address
+ shutdown
+ no snmp trap link-status
+!
+! End of port options for slot 5
+!
+interface mgmt0
+ description ** RESERVED **
+ no ip address
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan1111
+ description [site prefix]/vSC-CEa/blue/9.[b2.x9].0/28/pri</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.x9].3 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ !
+ ! Apply the following commands if IPv6 required at this site
+ !
+ ipv6 address FE80::A link-local
+ ipv6 address 2620:1F7:[h3b]::AA1:A/112
+ !
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 200
+  preempt delay minimum 60
+  address 9.[b2.x9].1 primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1114
+ description [site prefix]/vSC-CEb/blue/9.[b2.x9].32/28/pri</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.x9].35 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ !
+ ! Apply the following commands if IPv6 required at this site
+ !
+ ipv6 address FE80::A link-local
+ ipv6 address 2620:1F7:[h3b]::BA1:A/112
+ !
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 150
+  address 9.[b2.x9].33 primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+! Apply the following two VLAN interface definitions for VRF acc.y1, if present (dual inverted Y topology)
+!
+interface Vlan1131
+ description [site prefix]/vSC-CEa/acc.y1/9.[b6.x6].32/28/pri</[local description]>
+ vrf forwarding acc.y1
+ ip address 9.[b6.x6].35 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 200
+  preempt delay minimum 60
+  address 9.[b6.x6].33 primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1134
+ description [site prefix]/vSC-CEb/acc.y1/9.[b6.x6].64/28/pri</[local description]>
+ vrf forwarding acc.y1
+ ip address 9.[b6.x6].67 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 150
+  address 9.[b6.x6].65 primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+! Repeat the following two VLAN interface definitions for each additional VRF present
+! using WAN VPN infrastructure slot addressing, if any (bowtie topology)
+!
+interface Vlan[wslot+1]
+ description [site prefix]/vSCa-CEa/[VRF name]/[a4.b4.x4.vslot1+0]/31</[local description]>
+ vrf forwarding [VRF name]
+ ip address [a4.b4.x4.vslot1+1] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ arp timeout 420
+ no shutdown
+!
+interface Vlan[wslot+3]
+ description [site prefix]/vSCa-CEb/[VRF name]/[a4.b4.x4.vslot1+4]/31</[local description]>
+ vrf forwarding [VRF name]
+ ip address [a4.b4.x4.vslot1+5] 255.255.255.254
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1511
+ description [site prefix]/vSC-CEa/blue/9.[b2.x9].48/29/alt_RA</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.x9].51 255.255.255.248
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ !
+ ! Apply the following commands if IPv6 required at this site
+ !
+ ipv6 address FE80::A link-local
+ ipv6 address 2620:1F7:[h3b]::AA2:A/112
+ !
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1514
+ description [site prefix]/vSC-CEb/blue/9.[b2.x9].56/29/alt_RA</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.x9].59 255.255.255.248
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ !
+ ! Apply the following commands if IPv6 required at this site
+ !
+ ipv6 address FE80::A link-local
+ ipv6 address 2620:1F7:[h3b]::BA2:A/112
+ !
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1981
+ description [site prefix]/vSC-vBAa/global/9.[b1.z1.dslot+0]/29/xA_mgmt</[local description]>
+ ip address 9.[b1.z1.dslot+3] 255.255.255.248
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 200
+  preempt delay minimum 60
+  address 9.[b1.z1.dslot+1] primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1982
+ description [site prefix]/vSC-vBAb/global/9.[b1.z1.dslot+8]/29/xA_mgmt</[local description]>
+ ip address 9.[b1.z1.dslot+11] 255.255.255.248
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 150
+  address 9.[b1.z1.dslot+9] primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1991
+ description [site prefix]/vSC-vBAa/blue/9.[b2.x9.s+0]/28/dev_mgmt</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.x9.s+3] 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 200
+  preempt delay minimum 60
+  address 9.[b2.x9.s+1] primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+interface Vlan1992
+ description [site prefix]/vSC-vBAb/blue/9.[b2.x9.s+16]/28/dev_mgmt</[local description]>
+ vrf forwarding blue
+ ip address 9.[b2.x9.s+19] 255.255.255.240
+ no ip redirects
+ no ip proxy-arp
+ logging event link-status
+ load-interval 60
+ vrrp 1 address-family ipv4
+  timers advertise 500
+  priority 150
+  address 9.[b2.x9.s+17] primary
+  exit-vrrp
+ arp timeout 420
+ no shutdown
+!
+router ospf 1
+ router-id 9.[b1.x1].5
+ auto-cost reference-bandwidth 100000
+ area 0 authentication
+ timers throttle spf 1000 10000 10000
+ redistribute bgp [assigned campus MPLS cloud AS #] metric 1001 metric-type 1 subnets route-map rm_bgp_to_ospf
+ passive-interface Tunnel0
+ passive-interface Vlan1981
+ passive-interface Vlan1982
+ network 9.[b1.x1].0 0.0.0.255 area 0
+ !
+ ! Apply the following command if second global D-block IP address range has been allocated to this core
+ !
+ network 9.[b1.y1].0 0.0.0.255 area 0
+ !
+ maximum-paths 2
+ default-information originate always metric 1001 metric-type 1
+ distribute-list route-map rm_ospf_to_rib in
+!
+router bgp [assigned campus MPLS cloud AS #]
+ bgp router-id 9.[b1.x1].5
+ bgp log-neighbor-changes
+ bgp deterministic-med
+ no bgp default ipv4-unicast
+ timers bgp 5 15
+ neighbor rr peer-group
+ neighbor rr remote-as [assigned campus MPLS cloud AS #]
+ neighbor rr description ** [site prefix] backup route reflector **
+ neighbor rr password [Internal BGP Password]
+ neighbor rr update-source Loopback0
+ neighbor blue peer-group
+ neighbor blue remote-as 65016
+ neighbor blue local-as 64952 no-prepend replace-as
+ neighbor blue description ** [site prefix]-blue **
+ neighbor vsc peer-group
+ neighbor vsc remote-as [assigned campus MPLS cloud AS #]
+ neighbor vsc description ** [site prefix]-vSC-xlink **
+ neighbor vsc password [Internal BGP Password]
+ neighbor stub-client peer-group
+ neighbor stub-client remote-as [assigned campus MPLS cloud AS #]
+ neighbor stub-client description ** [site prefix] RR stub clients **
+ neighbor stub-client password [Internal BGP Password]
+ neighbor stub-client update-source Loopback1
+ neighbor transit-client peer-group
+ neighbor transit-client remote-as [assigned campus MPLS cloud AS #]
+ neighbor transit-client description ** [site prefix] RR transit clients **
+ neighbor transit-client password [Internal BGP Password]
+ neighbor transit-client update-source Loopback1
+ neighbor 9.[b1.x1].2 peer-group vsc
+ neighbor 9.[b1.x1].2 description ** [site prefix]-vsc-b-global **
+ neighbor 9.[b1.x1].6 peer-group rr
+ neighbor 9.[b1.x1].6 description ** [site prefix]-vsc-b-rr **
+ neighbor 9.[b1.x1].9 peer-group blue
+ neighbor 9.[b1.x1].9 description ** [site prefix]-vsc-a-blue **
+ !
+ ! Apply the following neighbor commands if vID block present
+ !
+ neighbor 9.[b1.z1.dslot+5] peer-group transit-client
+ neighbor 9.[b1.z1.dslot+5] description ** [site prefix]-vid-[n]a **
+ neighbor 9.[b1.z1.dslot+6] peer-group transit-client
+ neighbor 9.[b1.z1.dslot+6] description ** [site prefix]-vid-[n]b **
+ !
+ ! Repeat the following neighbor commands for each vSC-attached stub RR client block
+ !
+ neighbor 9.[b1.z1.dslot+5] peer-group stub-client
+ neighbor 9.[b1.z1.dslot+5] description ** [site prefix]-[vdd|vod|vsd|vwd]-d[n]a **
+ neighbor 9.[b1.z1.dslot+6] peer-group stub-client
+ neighbor 9.[b1.z1.dslot+6] description ** [site prefix]-[vdd|vod|vsd|vwd]-d[n]b **
+ !
+ ! Repeat the following neighbor commands for each vOD-attached MPLS vPBp/r pair, if any
+ !
+ neighbor 9.[b1.x8.bslot+5] peer-group stub-client
+ neighbor 9.[b1.x8.bslot+5] description ** [site prefix]-vpb-hp[local-id] **
+ neighbor 9.[b1.x8.bslot+6] peer-group stub-client
+ neighbor 9.[b1.x8.bslot+6] description ** [site prefix]-vpb-hr[local-id] **
+ !
+ ! Repeat the following neighbor commands for each vOD-attached standalone MPLS vPB, if any
+ !
+ neighbor 9.[b1.x8.bslot+5] peer-group stub-client
+ neighbor 9.[b1.x8.bslot+5] description ** [site prefix]-vpb-[local-id] **
+ !
+ address-family ipv4
+  !
+  ! Repeat the following command for each additional global management allocation, if any
+  !
+  aggregate-address 9.[b1.y].0 255.255.[mmm].0 attribute-map rm_mgmt_summary
+  !
+  aggregate-address 9.[b1.x].0 255.255.[mmm].0 attribute-map rm_mgmt_summary
+  redistribute connected route-map rm_conn_to_bgp
+  neighbor blue send-community
+  neighbor blue route-map rm_global_to_blue out
+  neighbor vsc send-community
+  neighbor 9.[b1.x1].2 activate
+  neighbor 9.[b1.x1].9 activate
+  maximum-paths 2
+ exit-address-family
+ !
+ address-family vpnv4
+  neighbor rr send-community both
+  neighbor rr route-reflector-client
+  neighbor rr route-map rm_from_rr in
+  neighbor rr route-map rm_to_rr_client out
+  neighbor rr unsuppress-map rm_to_rr_client
+  neighbor stub-client send-community both
+  neighbor stub-client route-reflector-client
+  neighbor stub-client route-map rm_to_rr_stub_client out
+  neighbor stub-client unsuppress-map rm_to_rr_stub_client
+  neighbor transit-client send-community both
+  neighbor transit-client route-reflector-client
+  neighbor transit-client route-map rm_to_rr_client out
+  neighbor transit-client unsuppress-map rm_to_rr_client
+  neighbor 9.[b1.x1].6 activate
+  !
+  ! Repeat the following neighbor commands for each vSC-attached RR client block
+  !
+  neighbor 9.[b1.z1.dslot+5] activate
+  neighbor 9.[b1.z1.dslot+6] activate
+  !
+  ! Repeat the following neighbor commands for each vOD-attached MPLS vPBp/r pair, if any
+  !
+  neighbor 9.[b1.x8.bslot+5] activate
+  neighbor 9.[b1.x8.bslot+6] activate
+  !
+  ! Repeat the following neighbor command for each vOD-attached standalone MPLS vPB, if any
+  !
+  neighbor 9.[b1.x8.bslot+5] activate
+  !
+  maximum-paths 2
+ exit-address-family
+ !
+ ! Apply the following VPNv6 address-family definition if IPv6 required at this site
+ !
+ address-family vpnv6
+  neighbor rr send-community both
+  neighbor rr route-reflector-client
+  neighbor rr route-map rm_from_rr in
+  neighbor rr route-map rm_to_rr_client out
+  neighbor rr unsuppress-map rm_to_rr_client
+  neighbor stub-client send-community both
+  neighbor stub-client route-reflector-client
+  neighbor stub-client route-map rm_to_rr_stub_client out
+  neighbor stub-client unsuppress-map rm_to_rr_stub_client
+  neighbor transit-client send-community both
+  neighbor transit-client route-reflector-client
+  neighbor transit-client route-map rm_to_rr_client out
+  neighbor transit-client unsuppress-map rm_to_rr_client
+  neighbor 9.[b1.x1].6 activate
+  !
+  ! Repeat the following neighbor commands for each vSC-attached IPv6 enabled RR client block
+  !
+  neighbor 9.[b1.z1.dslot+5] activate
+  neighbor 9.[b1.z1.dslot+6] activate
+  !
+  ! Repeat the following neighbor commands for each vOD-attached IPv6 enabled MPLS vPBp/r pair, if any
+  !
+  neighbor 9.[b1.x8.bslot+5] activate
+  neighbor 9.[b1.x8.bslot+6] activate
+  !
+  ! Repeat the following neighbor command for each vOD-attached IPv6 enabled standalone MPLS vPB, if any
+  !
+  neighbor 9.[b1.x8.bslot+5] activate
+  !
+ exit-address-family
+ !
+ ! Apply one of the following address-family definitions for each VRF present - order by VRF name A-Z
+ !
+ !----------------------------------------------------------------------------------------
+ ! VRF address-family for Yellow Access VPN, if present
+ !----------------------------------------------------------------------------------------
+ !
+ address-family ipv4 vrf acc.y1
+  import path selection bestpath
+  import path limit 4
+  bgp router-id 9.[b6.x6].105
+  !
+  ! Repeat the following command for each additional site summary range, if any
+  !
+  aggregate-address 9.[b6.c6].0 255.255.[mmm].0 summary-only attribute-map rm_site_summary_acc.y1
+  !
+  aggregate-address 9.[b6.x6].0 255.255.[mmm].0 summary-only attribute-map rm_site_summary_acc.y1
+  redistribute connected route-map rm_conn_to_bgp_vrf
+  redistribute static route-map rm_static_to_bgp_vrf
+  neighbor ce-acc peer-group
+  neighbor ce-acc remote-as [assigned CE AS #]
+  neighbor ce-acc description ** [site prefix]-CE-acc.y1 **
+  neighbor ce-acc disable-connected-check
+  neighbor ce-acc password [External BGP Password]
+  neighbor ce-acc update-source Loopback21
+  neighbor ce-acc send-community
+<  neighbor ce-acc remove-private-as >            ! Apply if VPAS is used by vID
+  neighbor ce-acc route-map rm_from_ce in
+  neighbor ce-acc route-map rm_to_ce out
+  neighbor ce-acc unsuppress-map rm_unsup_to_ce
+  neighbor ce-acc-pri peer-group
+  neighbor ce-acc-pri remote-as [assigned CE AS #]
+  neighbor ce-acc-pri description ** [site prefix]-CE-acc.y1-pri **
+  neighbor ce-acc-pri password [External BGP Password]
+  neighbor ce-acc-pri timers 3 9
+  neighbor ce-acc-pri send-community
+  neighbor ce-acc-pri route-map rm_from_ce_pri in
+  neighbor ce-acc-pri route-map rm_to_ce_pri out
+  neighbor ce-acc-pri unsuppress-map rm_to_ce_pri
+  neighbor 9.[b6.x6].15 peer-group ce-acc
+  neighbor 9.[b6.x6].15 description ** [site prefix]-ce-a-acc.y1 **
+  neighbor 9.[b6.x6].15 activate
+  neighbor 9.[b6.x6].31 peer-group ce-acc
+  neighbor 9.[b6.x6].31 description ** [site prefix]-ce-b-acc.y1 **
+  neighbor 9.[b6.x6].31 activate
+  neighbor 9.[b6.x6].38 peer-group ce-acc-pri
+  neighbor 9.[b6.x6].38 description ** [site prefix]-ce-a-acc.y1-pri **
+  neighbor 9.[b6.x6].38 activate
+  neighbor 9.[b6.x6].70 peer-group ce-acc-pri
+  neighbor 9.[b6.x6].70 description ** [site prefix]-ce-b-acc.y1-pri **
+  neighbor 9.[b6.x6].70 activate
+  maximum-paths 2
+  maximum-paths ibgp 2
+  default-information originate
+ exit-address-family
+ !
+ !----------------------------------------------------------------------------------------
+ ! Blue VRF address-family - apply always
+ !----------------------------------------------------------------------------------------
+ !
+ address-family ipv4 vrf blue
+  import path selection bestpath
+  import path limit 4
+  bgp router-id 9.[b3].[x3|y3].253
+  !
+  ! Repeat the following command for each additional site summary range
+  !
+  aggregate-address 9.[b2.c].0 255.255.[mmm].0 summary-only attribute-map rm_site_summary_blue
+  !
+  ! Apply the following command if legacy SC/BC/BD connection present
+  !
+  aggregate-address 9.[b2.z2.lslot1+0] 255.255.255.248 summary-only attribute-map rm_infra_summary_blue
+  !
+  ! The following command specifies the site infrastructure summary
+  !
+  aggregate-address 9.[b2.x2].0 255.255.[mmm].0 summary-only attribute-map rm_site_summary_blue
+  !
+  redistribute connected route-map rm_conn_to_bgp_vrf
+  redistribute static route-map rm_static_to_bgp_vrf
+  neighbor ce-blue peer-group
+  neighbor ce-blue remote-as [assigned CE AS #]
+  neighbor ce-blue description ** [site prefix]-CE-blue **
+  neighbor ce-blue disable-connected-check
+  neighbor ce-blue password [External BGP Password]
+  neighbor ce-blue update-source Loopback10
+  neighbor ce-blue send-community
+<  neighbor ce-blue remove-private-as >           ! Apply if VPAS is used by vID or legacy BC/BD
+  neighbor ce-blue route-map rm_from_ce_blue in
+  neighbor ce-blue route-map rm_to_ce_blue out
+  neighbor ce-blue unsuppress-map rm_unsup_to_ce
+  neighbor global peer-group
+  neighbor global remote-as 64952
+  neighbor global local-as 65016 no-prepend replace-as
+  neighbor global description ** [site prefix]-vSC-global **
+  neighbor global send-community
+  neighbor global route-map rm_blue_to_global out
+  neighbor global unsuppress-map rm_blue_to_global
+  neighbor ce-blue-pri peer-group
+  neighbor ce-blue-pri remote-as [assigned CE AS #]
+  neighbor ce-blue-pri description ** [site prefix]-CE-blue-pri **
+  neighbor ce-blue-pri password [External BGP Password]
+  neighbor ce-blue-pri timers 3 9
+  neighbor ce-blue-pri send-community
+  neighbor ce-blue-pri route-map rm_from_ce_pri in
+  neighbor ce-blue-pri route-map rm_to_ce_pri out
+  neighbor ce-blue-pri unsuppress-map rm_to_ce_pri
+  neighbor ce-blue-alt peer-group
+  neighbor ce-blue-alt remote-as [assigned CE AS #]
+  neighbor ce-blue-alt description ** [site prefix]-CE-blue-alt **
+  neighbor ce-blue-alt password [External BGP Password]
+  neighbor ce-blue-alt timers 3 9
+  neighbor ce-blue-alt send-community
+  neighbor ce-blue-alt route-map rm_from_ce_alt in
+  neighbor ce-blue-alt route-map rm_to_ce_alt out
+  neighbor ce-blue-alt unsuppress-map rm_to_ce_alt
+  !
+  ! Apply the following peer-group definition if legacy SC/BC/BD connection present
+  !
+  neighbor lc-blue peer-group
+  neighbor lc-blue remote-as [assigned legacy SC AS #|65000 for BC/BD]
+  neighbor lc-blue description ** [site prefix]-[SC|BC|BD]-legacy **
+  neighbor lc-blue password [Internal BGP Password]
+  neighbor lc-blue send-community
+  neighbor lc-blue route-map rm_from_legacy in
+  neighbor lc-blue route-map rm_to_legacy out
+  neighbor lc-blue unsuppress-map rm_unsup_to_legacy
+  !
+  ! Apply the following peer-group definition if IPv6 vTR present
+  !
+  neighbor vtr-blue peer-group
+  neighbor vtr-blue remote-as 65048
+  neighbor vtr-blue description ** [site prefix]-vTR-blue **
+  neighbor vtr-blue password [Internal BGP Password]
+  neighbor vtr-blue send-community
+  neighbor vtr-blue route-map rm_to_vtr out
+  neighbor vtr-blue unsuppress-map rm_unsup_to_vtr
+  !
+  neighbor 9.[b2.x9].6 peer-group ce-blue-pri
+  neighbor 9.[b2.x9].6 description ** [site prefix]-ce-a-blue-pri **
+  neighbor 9.[b2.x9].6 activate
+  neighbor 9.[b2.x9].38 peer-group ce-blue-pri
+  neighbor 9.[b2.x9].38 description ** [site prefix]-ce-b-blue-pri **
+  neighbor 9.[b2.x9].38 activate
+  !
+  ! Apply the following neighbor commands if IPv6 vTR present
+  !
+  neighbor 9.[b2.x9].50 peer-group vtr-blue
+  neighbor 9.[b2.x9].50 description ** [site prefix]-vtr-a-blue **
+  neighbor 9.[b2.x9].50 activate
+  !
+  neighbor 9.[b2.x9].54 peer-group ce-blue-alt
+  neighbor 9.[b2.x9].54 description ** [site prefix]-ce-a-blue-alt **
+  neighbor 9.[b2.x9].54 activate
+  !
+  ! Apply the following neighbor commands if IPv6 vTR present
+  !
+  neighbor 9.[b2.x9].58 peer-group vtr-blue
+  neighbor 9.[b2.x9].58 description ** [site prefix]-vtr-b-blue **
+  neighbor 9.[b2.x9].58 activate
+  !
+  neighbor 9.[b2.x9].62 peer-group ce-blue-alt
+  neighbor 9.[b2.x9].62 description ** [site prefix]-ce-b-blue-alt **
+  neighbor 9.[b2.x9].62 activate
+  !
+  ! Apply the following neighbor commands if legacy SC/BC/BD connection present
+  !
+  neighbor 9.[b2.z2.lslot1+2] peer-group lc-blue
+  neighbor 9.[b2.z2.lslot1+2] description ** [site prefix]-[sc|bc|bd]-a **
+  neighbor 9.[b2.z2.lslot1+2] activate
+  neighbor 9.[b2.z2.lslot1+6] peer-group lc-blue
+  neighbor 9.[b2.z2.lslot1+6] description ** [site prefix]-[sc|bc|bd]-b **
+  neighbor 9.[b2.z2.lslot1+6] activate
+  !
+  neighbor 9.64.[c9.d1] peer-group ce-blue
+  neighbor 9.64.[c9.d1] description ** [site prefix]-ce-a-blue **
+  neighbor 9.64.[c9.d1] activate
+  neighbor 9.64.[c9.d2] peer-group ce-blue
+  neighbor 9.64.[c9.d2] description ** [site prefix]-ce-b-blue **
+  neighbor 9.64.[c9.d2] activate
+  neighbor 9.[b1.x1].8 peer-group global
+  neighbor 9.[b1.x1].8 description ** [site prefix]-vsc-a-global **
+  neighbor 9.[b1.x1].8 activate
+  maximum-paths 2
+  maximum-paths ibgp 2
+  default-information originate
+ exit-address-family
+ !
+ !----------------------------------------------------------------------------------------
+ ! Blue IPv6 VRF address-family - apply if IPv6 required at this site
+ !----------------------------------------------------------------------------------------
+ !
+ address-family ipv6 vrf blue
+  redistribute connected route-map rm_conn_to_bgp_vrf
+  redistribute static route-map rm_static_to_bgp_vrf
+  default-information originate
+  maximum-paths 2
+  maximum-paths ibgp 2
+  import path selection bestpath
+  import path limit 4
+  bgp router-id 9.[b3].[x3|y3].253
+  aggregate-address 2620:1F7:[h3b]::/48 summary-only attribute-map rm_site_summary_blue
+  !
+  ! Apply the following command if site provides IPv6 DDI services
+  !
+  aggregate-address 2620:1F7:0:[h4dhcp]::/63 summary-only attribute-map rm_site_summary_blue
+  !
+  ! Apply the following peer-group definitions if native IPv6 peering with CE routers enabled
+  !
+  neighbor ce-blue-v6 peer-group
+  neighbor ce-blue-v6 remote-as [assigned CE AS #]
+  neighbor ce-blue-v6 description ** [site prefix]-CE-blue-v6 **
+  neighbor ce-blue-v6 disable-connected-check
+  neighbor ce-blue-v6 password [External BGP Password]
+  neighbor ce-blue-v6 update-source Loopback10
+  neighbor ce-blue-v6 send-community
+<  neighbor ce-blue-v6 remove-private-as >        ! Apply if VPAS is used by vID
+  neighbor ce-blue-v6 route-map rm_from_ce_blue in
+  neighbor ce-blue-v6 route-map rm_to_ce_blue out
+  neighbor ce-blue-v6 unsuppress-map rm_unsup_to_ce
+  neighbor ce-blue-v6-pri peer-group
+  neighbor ce-blue-v6-pri remote-as [assigned CE AS #]
+  neighbor ce-blue-v6-pri description ** [site prefix]-CE-blue-v6-pri **
+  neighbor ce-blue-v6-pri password [External BGP Password]
+  neighbor ce-blue-v6-pri timers 3 9
+  neighbor ce-blue-v6-pri send-community
+  neighbor ce-blue-v6-pri route-map rm_from_ce_pri in
+  neighbor ce-blue-v6-pri route-map rm_to_ce_pri out
+  neighbor ce-blue-v6-pri unsuppress-map rm_to_ce_pri
+  neighbor ce-blue-v6-alt peer-group
+  neighbor ce-blue-v6-alt remote-as [assigned CE AS #]
+  neighbor ce-blue-v6-alt description ** [site prefix]-CE-blue-v6-alt **
+  neighbor ce-blue-v6-alt password [External BGP Password]
+  neighbor ce-blue-v6-alt timers 3 9
+  neighbor ce-blue-v6-alt send-community
+  neighbor ce-blue-v6-alt route-map rm_from_ce_alt in
+  neighbor ce-blue-v6-alt route-map rm_to_ce_alt out
+  neighbor ce-blue-v6-alt unsuppress-map rm_to_ce_alt
+  !
+  ! Apply the following peer-group definition if IPv6 vTR present
+  !
+  neighbor vtr-blue-v6 peer-group
+  neighbor vtr-blue-v6 remote-as 65048
+  neighbor vtr-blue-v6 description ** [site prefix]-vTR-blue-v6 **
+  neighbor vtr-blue-v6 password [Internal BGP Password]
+  neighbor vtr-blue-v6 timers 3 9
+  neighbor vtr-blue-v6 send-community
+<  neighbor vtr-blue-v6 remove-private-as >       ! Apply if VPAS is used by vID
+  neighbor vtr-blue-v6 route-map rm_from_ce_blue in
+  neighbor vtr-blue-v6 route-map rm_to_ce_blue out
+  neighbor vtr-blue-v6 unsuppress-map rm_unsup_to_vtr
+  !
+  ! Apply the following neighbor commands if native IPv6 peering with CE routers enabled
+  !
+  neighbor 2620:1F7:[h3b]::A1B:1A peer-group ce-blue-v6
+  neighbor 2620:1F7:[h3b]::A1B:1A description ** [site prefix]-ce-a-blue-v6 **
+  neighbor 2620:1F7:[h3b]::A1B:1A activate
+  neighbor 2620:1F7:[h3b]::AA1:1A peer-group ce-blue-v6-pri
+  neighbor 2620:1F7:[h3b]::AA1:1A description ** [site prefix]-ce-a-blue-v6-pri **
+  neighbor 2620:1F7:[h3b]::AA1:1A activate
+  neighbor 2620:1F7:[h3b]::AA2:1A peer-group ce-blue-v6-alt
+  neighbor 2620:1F7:[h3b]::AA2:1A description ** [site prefix]-ce-a-blue-v6-alt **
+  neighbor 2620:1F7:[h3b]::AA2:1A activate
+  !
+  ! Apply the following neighbor commands if IPv6 vTR present
+  !
+  neighbor 2620:1F7:[h3b]::AA2:6A peer-group vtr-blue-v6
+  neighbor 2620:1F7:[h3b]::AA2:6A description ** [site prefix]-vtr-a-blue-v6 **
+  neighbor 2620:1F7:[h3b]::AA2:6A activate
+  !
+  ! Apply the following neighbor commands if native IPv6 peering with CE routers enabled
+  !
+  neighbor 2620:1F7:[h3b]::B1B:1B peer-group ce-blue-v6
+  neighbor 2620:1F7:[h3b]::B1B:1B description ** [site prefix]-ce-b-blue-v6 **
+  neighbor 2620:1F7:[h3b]::B1B:1B activate
+  neighbor 2620:1F7:[h3b]::BA1:1B peer-group ce-blue-v6-pri
+  neighbor 2620:1F7:[h3b]::BA1:1B description ** [site prefix]-ce-b-blue-v6-pri **
+  neighbor 2620:1F7:[h3b]::BA1:1B activate
+  neighbor 2620:1F7:[h3b]::BA2:1B peer-group ce-blue-v6-alt
+  neighbor 2620:1F7:[h3b]::BA2:1B description ** [site prefix]-ce-b-blue-v6-alt **
+  neighbor 2620:1F7:[h3b]::BA2:1B activate
+  !
+  ! Apply the following neighbor commands if IPv6 vTR present
+  !
+  neighbor 2620:1F7:[h3b]::BA2:6B peer-group vtr-blue-v6
+  neighbor 2620:1F7:[h3b]::BA2:6B description ** [site prefix]-vtr-b-blue-v6 **
+  neighbor 2620:1F7:[h3b]::BA2:6B activate
+  !
+ exit-address-family
+ !
+ !----------------------------------------------------------------------------------------
+ ! VRF address-family for Global Stub VPN using WAN VPN infrastructure slot, if any
+ !----------------------------------------------------------------------------------------
+ !
+ address-family ipv4 vrf [VRF name]
+  import path selection bestpath
+  import path limit 4
+  bgp router-id [a4.b4.x4.vslot1+9]
+  !
+  ! Repeat the following command for each additional aggregate of VRF site allocation, if any
+  !
+  aggregate-address [a4.b4.c4.s+0] 255.255.[mmm.mmm] summary-only attribute-map rm_site_summary_[VRF name]
+  !
+  ! Apply the following command for the WAN VPN infrastructure slot aggregate, if not included in site aggregate
+  !
+  aggregate-address [a4.b4.x4.vslot1+0] 255.255.255.224 summary-only attribute-map rm_site_summary_[VRF name]
+  !
+  ! Apply the following command for the first aggregate of VRF site allocation, if doing site-level aggregation
+  !
+  aggregate-address [a4.b4.c4.s+0] 255.255.[mmm.mmm] summary-only attribute-map rm_site_summary_[VRF name]
+  !
+  redistribute connected route-map rm_conn_to_bgp_vrf
+  redistribute static route-map rm_static_to_bgp_vrf
+  neighbor ce-[VRF prefix] peer-group
+  neighbor ce-[VRF prefix] remote-as [assigned CE AS #]
+  neighbor ce-[VRF prefix] description ** [site prefix]-CE-[CE VPN name] **
+  neighbor ce-[VRF prefix] password [External BGP Password]
+  neighbor ce-[VRF prefix] send-community
+<  neighbor ce-[VRF prefix] remove-private-as >    ! Apply if VPAS is used by vID
+  neighbor ce-[VRF prefix] route-map rm_from_ce_stub in
+  neighbor ce-[VRF prefix] route-map rm_to_ce out
+  neighbor ce-[VRF prefix] unsuppress-map rm_unsup_to_ce
+  neighbor [a4.b4.x4.vslot1+0] peer-group ce-[VRF prefix]
+  neighbor [a4.b4.x4.vslot1+0] description ** [site prefix]-ce-a-[CE VPN name] **
+  neighbor [a4.b4.x4.vslot1+0] activate
+  neighbor [a4.b4.x4.vslot1+4] peer-group ce-[VRF prefix]
+  neighbor [a4.b4.x4.vslot1+4] description ** [site prefix]-ce-b-[CE VPN name] **
+  neighbor [a4.b4.x4.vslot1+4] activate
+  maximum-paths 2
+  maximum-paths ibgp 2
+  default-information originate
+ exit-address-family
+ !
+ !----------------------------------------------------------------------------------------
+ ! VRF address-family for Transport VPN using CE + WAN VPN infrastructure slots, if any
+ !----------------------------------------------------------------------------------------
+ !
+ address-family ipv4 vrf [VRF name]
+  import path selection bestpath
+  import path limit 4
+  bgp router-id [a4.b4.x4.vslot1+9]
+  !
+  ! Repeat the following command for each additional aggregate of VRF/multi-VRF site allocation, if any
+  !
+  aggregate-address [a4.b4.c4.s+0] 255.255.[mmm.mmm] summary-only attribute-map rm_site_summary_[VRF name]
+  !
+  ! Apply the following command for the CE + WAN VPN infrastructure slots aggregate, if not included in site aggregate
+  !
+  aggregate-address [a4.b4.x4.vslot+0] 255.255.255.192 summary-only attribute-map rm_site_summary_[VRF name]
+  !
+  ! Apply the following command for the first aggregate of VRF/multi-VRF site allocation, if doing multi-VRF or site-level aggregation
+  !
+  aggregate-address [a4.b4.c4.s+0] 255.255.[mmm.mmm] summary-only attribute-map rm_site_summary_[VRF name]
+  !
+  redistribute connected route-map rm_conn_to_bgp_vrf
+  redistribute static route-map rm_static_to_bgp_vrf
+  neighbor ce-[VRF prefix] peer-group
+  neighbor ce-[VRF prefix] remote-as [assigned CE AS #]
+  neighbor ce-[VRF prefix] description ** [site prefix]-CE-[CE VPN name] **
+  neighbor ce-[VRF prefix] password [External BGP Password]
+  neighbor ce-[VRF prefix] send-community
+<  neighbor ce-[VRF prefix] remove-private-as >    ! Apply if VPAS is used by vID
+  neighbor ce-[VRF prefix] route-map rm_from_ce in
+  neighbor ce-[VRF prefix] route-map rm_to_ce out
+  neighbor ce-[VRF prefix] unsuppress-map rm_unsup_to_ce
+  neighbor [a4.b4.x4.vslot1+0] peer-group ce-[VRF prefix]
+  neighbor [a4.b4.x4.vslot1+0] description ** [site prefix]-ce-a-[CE VPN name] **
+  neighbor [a4.b4.x4.vslot1+0] activate
+  neighbor [a4.b4.x4.vslot1+4] peer-group ce-[VRF prefix]
+  neighbor [a4.b4.x4.vslot1+4] description ** [site prefix]-ce-b-[CE VPN name] **
+  neighbor [a4.b4.x4.vslot1+4] activate
+  maximum-paths 2
+  maximum-paths ibgp 2
+  default-information originate
+ exit-address-family
+ !
+ !----------------------------------------------------------------------------------------
+ ! End of address-family definitions for each VRF
+ !----------------------------------------------------------------------------------------
+!
+no ip forward-protocol nd
+no ip http server
+no ip http secure-server
+!
+ip policy-list rp_block_scope permit
+ match community 50
+!
+ip policy-list rp_from_legacy permit
+ match as-path 98
+!
+ip policy-list rp_default_scope permit
+ match community 101
+!
+ip policy-list rp_local_scope permit
+ match community 52
+!
+ip policy-list rp_bgp_ctl permit
+ match community 73
+!
+ip policy-list rp_displaced_host_other_site permit
+ match community 193
+!
+ip policy-list rp_other_block permit
+ match community 110
+!
+ip policy-list rp_from_ce permit
+ match as-path 99
+!
+ip policy-list rp_same_block_same_asn permit
+ match as-path 1
+ match community 10
+!
+ip policy-list rp_other_asn permit
+ match as-path 2
+!
+ip policy-list rp_limited_scope permit
+ match community 170
+!
+ip policy-list rp_from_global permit
+ match as-path 52
+!
+ip policy-list rp_lolo_source permit
+ match community 25
+!
+ip policy-list rp_same_block_adjacent_asn permit
+ match as-path 11
+ match community 10
+!
+ip policy-list rp_site_multi_source permit
+ match community 102
+!
+ip policy-list rp_internal_same_block_any_asn permit
+ match route-type internal
+ match community 10
+!
+ip policy-list rp_multi_source_backup permit
+ match community 138
+!
+ip policy-list rp_from_ab_vsc permit
+ match as-path 1 52
+ match community 162
+!
+ip policy-list rp_do_not_suppress permit
+ match community 85
+!
+ip policy-list rp_multi_source_sink permit
+ match community 139
+!
+ip policy-list rp_prefix_reduction_site permit
+ match community 78
+!
+ip policy-list rp_sink permit
+ match community 39
+!
+ip policy-list rp_vpn_lanwan_default permit
+ match extcommunity cl_rt_blue cl_rt_acc.y1
+!
+ip policy-list rp_from_vtr_any permit
+ match as-path 48
+!
+ip policy-list rp_explicit_sub_agg permit
+ match community 75
+!
+ip policy-list rp_from_site_asn_2 permit
+ match as-path 22
+!
+ip policy-list rp_from_vtr_local permit
+ match as-path 46
+!
+ip policy-list rp_multi_source_alternate permit
+ match community 137
+!
+ip policy-list rp_everything permit
+ match as-path 100
+!
+ip policy-list rp_non_adjacent_asn permit
+ match as-path 3
+!
+ip policy-list rp_displaced_host permit
+ match community 93
+!
+ip policy-list rp_global_scope permit
+ match community 59
+!
+ip policy-list rp_site_scope permit
+ match community 53
+!
+ip policy-list rp_local_site permit
+ match as-path 90
+!
+ip policy-list rp_same_asn permit
+ match as-path 1
+!
+ip policy-list rp_adjacent_asn permit
+ match as-path 11
+!
+ip policy-list rp_from_wan permit
+ match as-path 97
+!
+ip policy-list rp_speaker_loopback permit
+ match community 77
+!
+ip policy-list rp_multi_source permit
+ match community 35
+!
+ip policy-list rp_neighbor_scope permit
+ match community 51
+!
+ip policy-list rp_regional_scope permit
+ match community 57
+!
+ip policy-list rp_explicit_scope permit
+ match community 150
+!
+ip extcommunity-list standard cl_rt_acc.y1 permit rt 8:210
+ip extcommunity-list standard cl_rt_blue permit rt 8:100
+ip bgp-community new-format
+ip community-list 10 permit 2002:1000
+ip community-list 25 permit 2002:25
+ip community-list 35 permit 2002:35
+ip community-list 39 permit 2002:39
+ip community-list 50 permit 2002:50
+ip community-list 51 permit 2002:51
+ip community-list 52 permit 2002:52
+ip community-list 53 permit 2002:53
+ip community-list 57 permit 2002:57
+ip community-list 59 permit 2002:59
+ip community-list 73 permit 2002:73
+ip community-list 75 permit 2002:75
+ip community-list 77 permit 2002:77
+ip community-list 78 permit 2002:78
+ip community-list 85 permit 2002:85
+ip community-list 93 permit 2002:93
+ip community-list 101 deny _2002:5._
+ip community-list 101 permit .*
+ip community-list 102 deny _2002:57_
+ip community-list 102 deny _2002:59_
+ip community-list 102 permit _2002:35_
+ip community-list 110 deny _2002:1000_
+ip community-list 110 permit _2002:1..._
+ip community-list 137 permit _2002:35_2002:37_
+ip community-list 138 permit _2002:35_2002:38_
+ip community-list 139 permit _2002:35_2002:39_
+ip community-list 150 permit _2002:5._
+ip community-list 162 permit _2002:62_.+_2002:1000_
+ip community-list 170 permit _2002:7._
+ip community-list 193 deny _2002:53_
+ip community-list 193 permit _2002:93_
+ip community-list standard cl_global_or_regional_scope permit 2002:57
+ip community-list standard cl_global_or_regional_scope permit 2002:59
+ip as-path access-list 1 permit ^$
+ip as-path access-list 2 permit .+
+ip as-path access-list 3 permit .+_.+
+ip as-path access-list 11 deny .+_.+
+ip as-path access-list 11 permit .+
+ip as-path access-list 22 permit ^[assigned 2nd site AS #]_
+ip as-path access-list 46 permit ^65048$
+ip as-path access-list 48 permit _65048_
+ip as-path access-list 52 permit ^64952$
+ip as-path access-list 90 deny _[assigned CE AS #]_
+ip as-path access-list 90 permit .*
+ip as-path access-list 97 permit ^[assigned CE AS #]_.+
+!
+! Apply the following access-list if legacy SC/BC/BD connection present
+!
+ip as-path access-list 98 permit _[assigned legacy SC AS #|65000 for BC/BD]_
+!
+ip as-path access-list 99 permit _[assigned CE AS #]_
+ip as-path access-list 100 permit .*
+ip ftp source-interface Loopback0
+ip tftp source-interface Loopback0
+ip route 0.0.0.0 0.0.0.0 Null0 240 name "/* Global default anchor */"
+!
+! Apply one of the following static route sections for each VRF present - order by VRF name A-Z
+!   NOTE: All tags specified must have corresponding stanza in route-map rm_static_to_bgp_vrf
+!
+!---------------------------------------------------------------
+! VRF for Yellow Access VPN, if present
+!---------------------------------------------------------------
+!
+ip route vrf acc.y1 0.0.0.0 0.0.0.0 Null0 240 tag 210635000 name "/* Default route anchor */"
+ip route vrf acc.y1 9.[b6.x6].15 255.255.255.255 Null0 150 name "/* CEa loopback IBGP sink */"
+ip route vrf acc.y1 9.[b6.x6].31 255.255.255.255 Null0 150 name "/* CEb loopback IBGP sink */"
+ip route vrf acc.y1 10.0.0.0 255.0.0.0 Null0 240 name "/* RFC 1918 private range */"
+ip route vrf acc.y1 127.0.0.0 255.0.0.0 Null0 240 name "/* Bogon range */"
+ip route vrf acc.y1 169.254.0.0 255.255.0.0 Null0 240 name "/* Link-local range */"
+ip route vrf acc.y1 172.16.0.0 255.240.0.0 Null0 240 name "/* RFC 1918 private range */"
+ip route vrf acc.y1 192.0.2.0 255.255.255.0 Null0 240 name "/* Bogon range */"
+ip route vrf acc.y1 192.168.0.0 255.255.0.0 Null0 240 name "/* RFC 1918 private range */"
+ip route vrf acc.y1 198.18.0.0 255.254.0.0 Null0 240 name "/* Bogon range */"
+!
+!---------------------------------------------------------------
+! VRF blue - apply always
+!---------------------------------------------------------------
+!
+ip route vrf blue 0.0.0.0 0.0.0.0 Null0 240 tag 100835000 name "/* Default route anchor */"
+ip route vrf blue 9.0.0.0 255.0.0.0 Null0 tag 100850 name "/* 9. aggregate anchor */"
+ip route vrf blue 9.64.[c9.d1] 255.255.255.255 Null0 150 name "/* CEa loopback IBGP sink */"
+ip route vrf blue 9.64.[c9.d2] 255.255.255.255 Null0 150 name "/* CEb loopback IBGP sink */"
+ip route vrf blue 10.0.0.0 255.0.0.0 Null0 240 name "/* RFC 1918 private range */"
+ip route vrf blue 127.0.0.0 255.0.0.0 Null0 240 name "/* Bogon range */"
+ip route vrf blue 169.254.0.0 255.255.0.0 Null0 240 name "/* Link-local range */"
+ip route vrf blue 172.16.0.0 255.240.0.0 Null0 240 name "/* RFC 1918 private range */"
+ip route vrf blue 192.0.2.0 255.255.255.0 Null0 240 name "/* Bogon range */"
+ip route vrf blue 192.168.0.0 255.255.0.0 Null0 240 name "/* RFC 1918 private range */"
+ip route vrf blue 198.18.0.0 255.254.0.0 Null0 240 name "/* Bogon range */"
+!
+!---------------------------------------------------------------
+! VRF for Global Stub VPN, if any
+!---------------------------------------------------------------
+!
+! Apply the following two static routes if WAN does not provide default route
+!
+ip route vrf [VRF name] 0.0.0.0 0.0.0.0 [CEa-PE link prefix] tag [VPNID]500 name "/* Default route to CEa-PE beacon */"
+ip route vrf [VRF name] 0.0.0.0 0.0.0.0 [CEb-PE link prefix] tag [VPNID]500 name "/* Default route to CEb-PE beacon */"
+!
+ip route vrf [VRF name] 0.0.0.0 0.0.0.0 Null0 240 tag [VPNID][zone tag]35000 name "/* Default route anchor */"
+!
+!---------------------------------------------------------------
+! VRF for Transport VPN, if any
+!---------------------------------------------------------------
+!
+ip route vrf [VRF name] 0.0.0.0 0.0.0.0 Null0 240 tag [VPNID][zone tag]35000 name "/* Default route anchor */"
+!
+!---------------------------------------------------------------
+! End of static route VRF sections
+!---------------------------------------------------------------
+!
+ip ssh version 2
+ip ssh dscp 18
+!
+ip access-list standard al_vty_access_aspr
+ remark /**********************************************
+ remark Restrict VTY access
+ remark ***********************************************
+ remark Site network infrastructure ranges
+ remark **********************************************/
+ permit 9.[b1.x].0 0.0.[255-mmm].255                       ! Global management first range
+ !
+ ! Repeat the following entry for each additional global management allocation, if any
+ !
+ permit 9.[b1.y].0 0.0.[255-mmm].255                       ! Global management additional range
+ !
+ ! Legacy campus infrastructure options - apply each applicable option
+ !
+ ! Option 1 - Legacy SC+BC with Ia addressing; legacy SC+CD IIa (Americas)
+ !
+ permit 9.[b2.x2].0 0.0.1.255                              ! Legacy SC+Ia/IIa campus infrastructure range
+ !
+ ! Option 2 - Legacy SC+BD; legacy BD; legacy SC+BC with Ib addressing
+ !
+ permit 9.[b2.x2].0 0.0.3.255                              ! Legacy SC+Ib or Ib campus infrastructure range
+ !
+ ! Option 3 - Legacy SC; legacy BC (no SC) with Ia addressing
+ !
+ permit 9.[b2.z2].0 0.0.0.255                              ! Legacy SC or Ia campus infrastructure range
+ !
+ ! End of campus infrastructure options
+ !
+ remark /*********************************************-
+ remark AT&T iGEMS management segments
+ remark *********************************************-/
+ permit 135.89.45.0 0.0.0.255
+ permit 135.89.84.128 0.0.0.127
+ permit 135.89.176.0 0.0.0.255
+ permit 135.89.213.0 0.0.0.255
+ remark /********************************************--
+ remark Global AT&T enclave address pool
+ remark ********************************************--/
+ permit 9.65.6.0 0.0.1.255
+ permit 9.78.8.0 0.0.7.255
+ permit 9.78.16.0 0.0.15.255
+ permit 9.78.32.0 0.0.15.255
+ deny   any log
+!
+ip access-list extended acl-copp-match-igmp
+ permit igmp any any
+ip access-list extended acl-copp-match-pim-data
+ deny   pim any host 224.0.0.13
+ permit pim any any
+!
+!
+ip prefix-list pl_blue_infrastructure seq 100 permit 9.[b3.x3].0/24 le 32
+!
+! Apply the following sequence if second blue infrastructure IP address range has been allocated to this core
+!
+ip prefix-list pl_blue_infrastructure seq 110 permit 9.[b3.y3].0/24 le 32
+!
+ip prefix-list pl_blue_infrastructure seq 1000 deny 0.0.0.0/0 le 32
+!
+ip prefix-list pl_default_route seq 100 permit 0.0.0.0/0
+ip prefix-list pl_default_route seq 1000 deny 0.0.0.0/0 le 32
+!
+ip prefix-list pl_infrastructure_links seq 100 permit 9.[b1.x].0/22 le 31
+ip prefix-list pl_infrastructure_links seq 1000 deny 0.0.0.0/0 le 32
+!
+ip prefix-list pl_loopback seq 100 permit 0.0.0.0/0 ge 32
+ip prefix-list pl_loopback seq 1000 deny 0.0.0.0/0 le 32
+!
+ip prefix-list pl_non_default seq 100 deny 0.0.0.0/0
+ip prefix-list pl_non_default seq 1000 permit 0.0.0.0/0 le 32
+!
+ip prefix-list pl_non_routable seq 100 permit 172.16.0.0/12 le 32
+ip prefix-list pl_non_routable seq 110 permit 192.168.0.0/16 le 32
+ip prefix-list pl_non_routable seq 1000 deny 0.0.0.0/0 le 32
+!
+ip prefix-list pl_none seq 1000 deny 0.0.0.0/0 le 32
+!
+! Site IP address allocation - permit ranges of routes originated within site
+! within the blue VRF. Do NOT include transit prefixes.
+! Use seq 100 for the first entry and increment by 10 for each additional entry.
+!
+ip prefix-list pl_site_allocation_blue seq 100 permit 9.[b2.c].0/[mm] le 32
+!
+! Repeat the following command for any additional site ranges
+!
+ip prefix-list pl_site_allocation_blue seq [prev seq +10] permit [a.b.c.s]/[mm] le 32
+!
+ip prefix-list pl_site_allocation_blue seq 1000 deny 0.0.0.0/0 le 32
+!
+ip prefix-list pl_site_allocation_global seq 100 permit 9.[b1.x].0/[mm] le 32
+!
+! Repeat the following sequence for each additional global management allocation, if any
+!
+ip prefix-list pl_site_allocation_global seq [prev seq +10] permit 9.[b1.y].0/[mm] le 32
+!
+ip prefix-list pl_site_allocation_global seq 1000 deny 0.0.0.0/0 le 32
+logging history notifications
+logging trap notifications
+logging source-interface Loopback0
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   All devices - iGEMS DMS servers (2)
+!
+logging host [syslog server IP address from spreadsheet]
+!
+access-list 79 remark /**********************************************
+access-list 79 remark NTP authorized servers
+access-list 79 remark **********************************************/
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   All devices - iGEMS DMS servers (2)
+!
+access-list 79 permit [NTP server IP address from spreadsheet]
+!
+access-list 79 deny   any
+!
+! Apply the following access-list if legacy IBM SNMP server RO ranges/hosts specified in spreadsheet
+!
+access-list 80 remark /**********************************************
+access-list 80 remark SNMP RO authorized servers
+access-list 80 remark **********************************************/
+!
+! Repeat one of the following commands for each address range or address specified in spreadsheet
+!   Legacy IBM SNMP server RO ranges/hosts
+!
+access-list 80 permit [SNMP server IP address range from spreadsheet] 0.0.0.[mask from spreadsheet]
+access-list 80 permit [SNMP server IP address from spreadsheet]
+!
+access-list 80 deny   any
+!
+access-list 93 remark /**********************************************
+access-list 93 remark AT&T SNMP RW authorized servers
+access-list 93 remark **********************************************/
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   iGEMS DMS server RW ranges
+!
+access-list 93 permit [SNMP server IP address range from spreadsheet] 0.0.0.[mask from spreadsheet]
+!
+access-list 93 deny   any
+access-list 95 remark /**********************************************
+access-list 95 remark AT&T SNMP RO authorized servers
+access-list 95 remark **********************************************/
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   iGEMS DMS server RO ranges
+!
+access-list 95 permit [SNMP server IP address range from spreadsheet] 0.0.0.[mask from spreadsheet]
+!
+access-list 95 deny   any
+!
+! Apply the following IPv6 static route section if IPv6 required at this site
+!
+ipv6 route vrf blue ::/8 Null0 240 name "/* Bogon: unspecified, loopback, etc */"
+ipv6 route vrf blue 100::/64 Null0 240 name "/* Bogon: Discard-Only Addresses */"
+ipv6 route vrf blue 2001::/32 Null0 240 name "/* Bogon: TEREDO */"
+ipv6 route vrf blue 2001:2::/48 Null0 240 name "/* Bogon: Benchmarking */"
+ipv6 route vrf blue 2001:10::/28 Null0 240 name "/* Bogon: ORCHID */"
+ipv6 route vrf blue 2001:DB8::/32 Null0 240 name "/* Bogon: IANA reserved */"
+ipv6 route vrf blue 2002::/16 Null0 240 name "/* Bogon: 6to4 Tunneling */"
+ipv6 route vrf blue 2620:1F7::/34 Null0 tag 100850 name "/* Blue aggregate anchor */"
+ipv6 route vrf blue 3FFE::/16 Null0 240 name "/* Bogon: 6Bone (deprecated) */"
+ipv6 route vrf blue FC00::/7 Null0 240 name "/* Bogon: RFC 4193 Unique Local */"
+ipv6 route vrf blue FEC0::/10 Null0 240 name "/* Bogon: RFC 3879 Site-local Unicast */"
+ipv6 route vrf blue ::/0 Null0 240 tag 100835000 name "/* IPv6 Default route anchor */"
+!
+! Apply the following IPv6 prefix-list section if IPv6 required at this site
+!
+ipv6 prefix-list pl6_blue_infrastructure seq 100 permit 2620:1F7:[h3b]::/98 le 128
+ipv6 prefix-list pl6_blue_infrastructure seq 1000 deny ::/0 le 128
+!
+ipv6 prefix-list pl6_default_route seq 100 permit ::/0
+ipv6 prefix-list pl6_default_route seq 1000 deny ::/0 le 128
+!
+ipv6 prefix-list pl6_non_routable seq 100 permit ::/8 le 128
+ipv6 prefix-list pl6_non_routable seq 110 permit 100::/64 le 128
+ipv6 prefix-list pl6_non_routable seq 120 permit 2001::/32 le 128
+ipv6 prefix-list pl6_non_routable seq 130 permit 2001:2::/48 le 128
+ipv6 prefix-list pl6_non_routable seq 140 permit 2001:10::/28 le 128
+ipv6 prefix-list pl6_non_routable seq 150 permit 2001:DB8::/32 le 128
+ipv6 prefix-list pl6_non_routable seq 160 permit 2002::/16 le 128
+ipv6 prefix-list pl6_non_routable seq 170 permit 2620:1F7::/37 ge 65
+ipv6 prefix-list pl6_non_routable seq 180 permit 3FFE::/16 le 128
+ipv6 prefix-list pl6_non_routable seq 190 permit FC00::/7 le 128
+ipv6 prefix-list pl6_non_routable seq 200 permit FE80::/10 le 128
+ipv6 prefix-list pl6_non_routable seq 210 permit FEC0::/10 le 128
+ipv6 prefix-list pl6_non_routable seq 1000 deny ::/0 le 128
+!
+ipv6 prefix-list pl6_none seq 1000 deny ::/0 le 128
+!
+ipv6 prefix-list pl6_site_allocation_blue seq 100 deny 2620:1F7:[h3b]::A00:0/103 le 128
+ipv6 prefix-list pl6_site_allocation_blue seq 110 permit 2620:1F7:[h3b]::/48 le 128
+!
+! Apply the following command if site provides IPv6 DDI services
+!
+ipv6 prefix-list pl6_site_allocation_blue seq 120 permit 2620:1F7:0:[h4dhcp]::/63 le 64
+!
+ipv6 prefix-list pl6_site_allocation_blue seq 1000 deny ::/0 le 128
+!
+!---------------------------------------------------------------
+!  Route-map to CE uplink neighbor for non-blue VPN (02)
+!---------------------------------------------------------------
+route-map rm_to_ce deny 100
+ description ** Deny prefixes matching policy **
+ match policy-list rp_from_ab_vsc rp_from_ce rp_lolo_source rp_site_multi_source
+!
+route-map rm_to_ce permit 200
+ description ** Set no-export on neighbor-scope prefixes from same block and AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_to_ce permit 210
+ description ** Set no-export on local-scope prefixes from same AS or adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_to_ce permit 220
+ description ** Prepend AS on regional default route prefix **
+ match ip address prefix-list pl_default_route
+ match policy-list rp_regional_scope
+ continue 300
+ set as-path prepend [assigned campus MPLS cloud AS #]
+!
+route-map rm_to_ce permit 230
+ description ** Prepend AS on alternate/backup/sink prefixes **
+ match policy-list rp_multi_source_alternate rp_multi_source_backup rp_multi_source_sink
+ continue 300
+ set as-path prepend [campus MPLS AS x 8]
+!
+route-map rm_to_ce permit 250
+ description ** Allow global/regional/default-scope prefixes **
+ match policy-list rp_default_scope rp_global_scope rp_regional_scope
+ continue 300
+!
+route-map rm_to_ce deny 290
+ description ** Deny all other prefixes **
+ match policy-list rp_everything
+!
+route-map rm_to_ce permit 300
+ description ** Set less preferred metric on internal prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_to_ce permit 310
+ description ** Set normal metric on all other prefixes **
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map from route reflectors (09)
+!---------------------------------------------------------------
+route-map rm_from_rr deny 100
+ description ** Deny prefixes from same block tagged as sink **
+ match policy-list rp_sink
+ match policy-list rp_same_block_same_asn
+!
+route-map rm_from_rr permit 500
+ description ** Allow all other prefixes **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map for static routes into BGP for all VRFs (0B)
+!---------------------------------------------------------------
+route-map rm_static_to_bgp_vrf permit 1000
+ description ** Floating multi-source prefix in VRF blue **
+ match tag 100835000
+ set metric 999
+ set local-preference 50
+ set weight 0
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:35 2002:39 2002:53 2002:100 2002:1000
+!
+route-map rm_static_to_bgp_vrf permit 1008
+ description ** Static routes for blue VPN block-scope prefixes **
+ match tag 100850
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:35 2002:50 2002:100 2002:1000
+!
+! Apply the following route-map stanza for VRF acc.y1, if present
+!
+route-map rm_static_to_bgp_vrf permit 2100
+ description ** Floating multi-source prefix in VRF acc.y1 **
+ match tag 210635000
+ set metric 999
+ set local-preference 50
+ set weight 0
+ set origin igp
+ set community 163:[RESO ID] 2002:6 2002:35 2002:39 2002:53 2002:210 2002:1000
+!
+! Repeat the following route-map stanzas section for each additional VRF present
+!   other than blue and acc.y1.
+!
+route-map rm_static_to_bgp_vrf permit [VPNRM+0]
+ description ** Floating multi-source prefix in VRF [VRF name] **
+ match tag [VPNID][zone tag]35000
+ set metric 999
+ set local-preference 50
+ set weight 0
+ set origin igp
+ set community 163:[RESO ID] 2002:[zone tag] 2002:35 2002:39 2002:53 2002:[VPNID] 2002:1000
+!
+! Apply the following stanza if Global Stub VPN VRF with static WAN default
+!
+route-map rm_static_to_bgp_vrf permit [VPNRM+5]
+ description ** Static routes for [VPN name] VPN default prefixes **
+ match tag [VPNID]500
+ set origin igp
+ set community 163:[RESO ID] 2002:5 2002:35 2002:53 2002:[VPNID] 2002:1000
+!
+! End of optional route-map stanzas for additional VRF
+!
+!---------------------------------------------------------------
+!  Route-map to stub RR clients (0D)
+!---------------------------------------------------------------
+route-map rm_to_rr_stub_client deny 100
+ description ** Deny default route prefix from VPNs with local and remote default **
+ match ip address prefix-list pl_default_route
+ match policy-list rp_vpn_lanwan_default
+< match ipv6 address prefix-list pl6_default_route >            ! Apply if IPv6 required at this site
+!
+route-map rm_to_rr_stub_client permit 110
+ description ** Allow all other default route prefixes **
+ match ip address prefix-list pl_default_route
+< match ipv6 address prefix-list pl6_default_route >            ! Apply if IPv6 required at this site
+!
+route-map rm_to_rr_stub_client permit 120
+ description ** Allow site-scope prefixes from any AS **
+ match policy-list rp_site_scope
+!
+route-map rm_to_rr_stub_client deny 150
+ description ** Deny prefixes from CE **
+ match policy-list rp_from_ce
+!
+! Apply the following stanza if IPv6 vTR present
+!
+route-map rm_to_rr_stub_client deny 160
+ description ** Deny prefixes from vTR **
+ match policy-list rp_from_vtr_any
+!
+route-map rm_to_rr_stub_client deny 200
+ description ** Deny neighbor-scope prefixes from other AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_other_asn
+!
+route-map rm_to_rr_stub_client deny 210
+ description ** Deny local-scope prefixes from non-adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_non_adjacent_asn
+!
+route-map rm_to_rr_stub_client permit 500
+ description ** Allow all other prefixes **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map from CE uplink neighbor for non-blue VPN (0F)
+!---------------------------------------------------------------
+route-map rm_from_ce permit 300
+ description ** Set remote alternate preference value on prefixes tagged as alternate **
+ match policy-list rp_multi_source_alternate
+ set local-preference 650
+!
+route-map rm_from_ce permit 310
+ description ** Set remote backup preference value on prefixes tagged as backup **
+ match policy-list rp_multi_source_backup
+ set local-preference 450
+!
+route-map rm_from_ce permit 320
+ description ** Set remote sink preference value on prefixes tagged as sink **
+ match policy-list rp_multi_source_sink
+ set local-preference 250
+!
+route-map rm_from_ce permit 390
+ description ** Set remote primary preference value on all other prefixes tagged as multiple-source **
+ match policy-list rp_multi_source
+ set local-preference 750
+!
+route-map rm_from_ce permit 500
+ description ** Allow all other prefixes unchanged **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map to legacy SC/BC/BD - apply if present (11)
+!---------------------------------------------------------------
+route-map rm_to_legacy deny 100
+ description ** Deny prefixes matching policy **
+ match policy-list rp_block_scope rp_displaced_host_other_site rp_from_ab_vsc rp_from_legacy
+!
+route-map rm_to_legacy deny 110
+ description ** Deny BGP control prefixes from WAN or crossover VPN **
+ match policy-list rp_bgp_ctl
+ match policy-list rp_from_site_asn_2 rp_from_wan
+!
+route-map rm_to_legacy permit 200
+ description ** Set no-export on neighbor-scope prefixes from same block and AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_to_legacy permit 210
+ description ** Set no-export on local-scope prefixes from same AS or adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_to_legacy deny 290
+ description ** Deny all other neighbor/local-scope prefixes **
+ match policy-list rp_local_scope rp_neighbor_scope
+!
+route-map rm_to_legacy permit 300
+ description ** Set less preferred metric on internal prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_to_legacy permit 310
+ description ** Set normal metric on all other prefixes **
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map from legacy SC/BC/BD - apply if present (1C)
+!---------------------------------------------------------------
+route-map rm_from_legacy permit 100
+ description ** Set block-ID community on prefixes matching policy **
+ match policy-list rp_explicit_scope
+ continue 200
+ set community 2002:1000 additive
+!
+route-map rm_from_legacy permit 110
+ description ** Set block-ID community on prefixes matching control lists **
+ match ip address prefix-list pl_default_route pl_non_routable pl_site_allocation_blue
+ continue 200
+ set community 2002:1000 additive
+!
+route-map rm_from_legacy permit 120
+ description ** Set global scope and block-ID community on all other prefixes **
+ match policy-list rp_everything
+ continue 200
+ set community 2002:59 2002:1000 additive
+!
+route-map rm_from_legacy permit 200
+ description ** Set less preferred local alternate preference value on multi-source alternate prefixes **
+ match policy-list rp_multi_source_alternate
+ set local-preference 840
+!
+route-map rm_from_legacy permit 210
+ description ** Set less preferred local backup preference value on multi-source backup prefixes **
+ match policy-list rp_multi_source_backup
+ set local-preference 540
+!
+route-map rm_from_legacy permit 220
+ description ** Set less preferred local sink preference value on multi-source sink prefixes **
+ match policy-list rp_multi_source_sink
+ set local-preference 340
+!
+route-map rm_from_legacy permit 290
+ description ** Set less preferred local primary preference value on all other multi-source prefixes **
+ match policy-list rp_multi_source
+ set local-preference 940
+!
+route-map rm_from_legacy permit 500
+ description ** Allow all other prefixes otherwise unchanged **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map for connected routes into BGP for all VRFs (1F)
+!---------------------------------------------------------------
+route-map rm_conn_to_bgp_vrf permit 1001
+ description ** Set attributes for blue IPv4</v6> loopback interface **
+ match interface Loopback10
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:11 2002:25 2002:61 2002:100 2002:1000
+!
+route-map rm_conn_to_bgp_vrf permit 1002
+ description ** Set attributes for blue IPv4 tunnel link to global **
+ match interface Tunnel1
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:11 2002:51 2002:61 2002:100 2002:1000
+!
+route-map rm_conn_to_bgp_vrf permit 1003
+ description ** Set attributes for blue IPv4 uplinks to P9 CE-A **
+ match interface Vlan1111 Vlan1511
+< match ipv6 address prefix-list pl6_none >                     ! Apply if IPv6 required at this site
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:11 2002:57 2002:85 2002:91 2002:100 2002:1000
+!
+route-map rm_conn_to_bgp_vrf permit 1004
+ description ** Set attributes for blue IPv4 uplinks to P9 CE-B **
+ match interface Vlan1114 Vlan1514
+< match ipv6 address prefix-list pl6_none >                     ! Apply if IPv6 required at this site
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:11 2002:57 2002:85 2002:92 2002:100 2002:1000
+!
+! Apply the following stanza if legacy SC/BC/BD present
+!
+route-map rm_conn_to_bgp_vrf deny 1005
+ description ** Do not redistribute unowned blue links to legacy [SC|BC|BD] **
+ !
+ ! Apply only one of the following commands to match legacy SC/BC/BD interfaces
+ !
+< match interface TenGigabitEthernet1/[2*n-13] TenGigabitEthernet1/[2*n-12] >
+< match interface TenGigabitEthernet2/[2*n-29|2*n-61] TenGigabitEthernet2/[2*n-28|2*n-60] >
+< match interface TenGigabitEthernet3/[2*n-45|2*n-77] TenGigabitEthernet3/[2*n-44|2*n-76] >
+< match interface TenGigabitEthernet5/[2*n+3] TenGigabitEthernet5/[2*n+4] >
+!
+route-map rm_conn_to_bgp_vrf permit 1006
+ description ** Set attributes for other blue infrastructure interfaces **
+ match ip address prefix-list pl_blue_infrastructure
+< match ipv6 address prefix-list pl6_blue_infrastructure >      ! Apply if IPv6 required at this site
+ set origin igp
+ set community 163:[RESO ID] 2002:8 2002:11 2002:100 2002:1000
+!
+! Apply the following two stanzas if VRF acc.y1 present
+!
+route-map rm_conn_to_bgp_vrf permit 2101
+ description ** Set attributes for VRF acc.y1 loopback interface **
+ match interface Loopback21
+ set origin igp
+ set community 163:[RESO ID] 2002:6 2002:11 2002:25 2002:61 2002:210 2002:1000
+!
+route-map rm_conn_to_bgp_vrf permit 2102
+ description ** Set attributes for VRF acc.y1 uplink interfaces **
+ match interface Vlan1131 Vlan1134
+ set origin igp
+ set community 163:[RESO ID] 2002:6 2002:11 2002:53 2002:210 2002:1000
+!
+! Repeat the following two stanzas for each VRF present using CE + WAN VPN infrastructure slots
+!
+route-map rm_conn_to_bgp_vrf permit [VPNRM+1]
+ description ** Set attributes for VRF [VRF name] loopback interface **
+ match interface Loopback[VPNINDEX]
+ set origin igp
+ set community 163:[RESO ID] 2002:[zone tag] 2002:11 2002:61 2002:[VPNID] 2002:1000
+!
+route-map rm_conn_to_bgp_vrf permit [VPNRM+2]
+ description ** Set attributes for VRF [VRF name] uplink interfaces **
+ match interface Vlan[wslot+1] Vlan[wslot+3]
+ set origin igp
+ set community 163:[RESO ID] 2002:[zone tag] 2002:11 2002:53 2002:61 2002:[VPNID] 2002:1000
+!
+! Repeat the following stanza for each additional VRF present
+!
+route-map rm_conn_to_bgp_vrf permit [VPNRM+1]
+ description ** Set attributes for VRF [VRF name] interfaces **
+ match interface Loopback[VPNINDEX] Vlan[wslot+1] Vlan[wslot+3]
+ set origin igp
+ set community 163:[RESO ID] 2002:[zone tag] 2002:11 2002:61 2002:[VPNID] 2002:1000
+!
+!--------------------------------------------------------------------------
+!  Route-map for site summaries for VRF acc.y1 - apply if VRF present (20)
+!--------------------------------------------------------------------------
+route-map rm_site_summary_acc.y1 permit 100
+ description ** Set attributes for site summaries within VRF acc.y1 **
+ set metric 50
+ set community 163:[RESO ID] 2002:6 2002:210 2002:1000
+!
+!---------------------------------------------------------------
+!  Route-map for connected routes into BGP global table (22)
+!---------------------------------------------------------------
+route-map rm_conn_to_bgp permit 100
+ description ** Set attributes for loopback0 interface **
+ match interface Loopback0
+ set origin igp
+ set community 163:[RESO ID] 2002:0 2002:11 2002:57 2002:61 2002:70 2002:77 2002:800 2002:1000
+!
+route-map rm_conn_to_bgp permit 110
+ description ** Set attributes for other loopback interfaces **
+ match interface Loopback1 Loopback2
+ set origin igp
+ set community 163:[RESO ID] 2002:0 2002:11 2002:52 2002:61 2002:800 2002:1000
+!
+route-map rm_conn_to_bgp permit 120
+ description ** Set attributes for links common to vSCa and vSCb **
+ match interface Port-channel101 Vlan1981 Vlan1982
+ set origin igp
+ set community 163:[RESO ID] 2002:0 2002:11 2002:52 2002:800 2002:1000
+!
+route-map rm_conn_to_bgp permit 500
+ description ** Set attributes for all other global infrastructure interfaces **
+ match ip address prefix-list pl_infrastructure_links
+ set origin igp
+ set community 163:[RESO ID] 2002:0 2002:11 2002:52 2002:61 2002:800 2002:1000
+!
+!---------------------------------------------------------------------------------
+!  Route-map for unsuppressed prefixes to legacy SC/BC/BD - apply if present (23)
+!---------------------------------------------------------------------------------
+route-map rm_unsup_to_legacy deny 100
+ description ** Deny suppressed prefixes matching policy **
+ match policy-list rp_block_scope rp_from_ab_vsc rp_from_legacy
+!
+route-map rm_unsup_to_legacy deny 120
+ description ** Deny suppressed BGP control prefixes from local site **
+ match policy-list rp_bgp_ctl
+ match policy-list rp_local_site
+!
+route-map rm_unsup_to_legacy permit 200
+ description ** Set no-export on neighbor-scope suppressed prefixes from same block and AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_unsup_to_legacy permit 210
+ description ** Set no-export on local-scope suppressed prefixes from same AS or adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_unsup_to_legacy permit 220
+ description ** Allow global/regional/site-scope suppressed prefixes **
+ match policy-list rp_global_scope rp_regional_scope rp_site_scope
+ continue 300
+!
+route-map rm_unsup_to_legacy permit 250
+ description ** Set neighbor scope on default-scope suppressed prefixes from same block and AS **
+ match policy-list rp_default_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set community 2002:51 no-export additive
+!
+route-map rm_unsup_to_legacy permit 260
+ description ** Set local scope on default-scope suppressed prefixes from same AS or adjacent AS **
+ match policy-list rp_default_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+ set community 2002:52 no-export additive
+!
+route-map rm_unsup_to_legacy deny 270
+ description ** Deny default-scope suppressed prefixes from blue/global infrastructure ranges **
+ match ip address prefix-list pl_blue_infrastructure pl_site_allocation_global
+ match policy-list rp_default_scope
+!
+route-map rm_unsup_to_legacy deny 290
+ description ** Deny all other neighbor/local-scope suppressed prefixes **
+ match policy-list rp_local_scope rp_neighbor_scope
+!
+route-map rm_unsup_to_legacy permit 300
+ description ** Set less preferred metric on internal suppressed prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_unsup_to_legacy permit 310
+ description ** Set normal metric on all other suppressed prefixes **
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map for global BGP routes into global OSPF (24)
+!---------------------------------------------------------------
+route-map rm_bgp_to_ospf permit 100
+ description ** Redistribute prefixes from external AS **
+ match as-path 2
+!
+!---------------------------------------------------------------
+!  Route-map to CE direct neighbor for route-around path (24)
+!---------------------------------------------------------------
+route-map rm_to_ce_alt permit 100
+ description ** Allow and set no-export + route-around metric on local loopback peering source prefix **
+ match route-type local
+ match policy-list rp_lolo_source
+ set metric 60
+ set community 2002:51 no-export additive
+!
+! Apply the following stanza if IPv6 vTR present
+!
+route-map rm_to_ce_alt permit 110
+ description ** Allow vTR loopback prefix **
+ match ip address prefix-list pl_loopback
+ match policy-list rp_from_vtr_local
+ match ipv6 address prefix-list pl6_none
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map for OSPF routes into global routing table (28)
+!---------------------------------------------------------------
+route-map rm_ospf_to_rib deny 100
+ description ** Deny OSPF routes learned via BGP **
+ match tag 65016
+!
+route-map rm_ospf_to_rib permit 110
+ description ** Allow all other OSPF routes except default in RIB **
+ match ip address prefix-list pl_non_default
+!
+!---------------------------------------------------------------
+!  Route-map from CE direct neighbor for route-around path (29)
+!---------------------------------------------------------------
+route-map rm_from_ce_alt permit 100
+ description ** Allow and set route-around preference and metric on loopback prefixes from adjacent AS **
+ match ip address prefix-list pl_loopback
+ match policy-list rp_adjacent_asn
+ set metric +10
+ set local-preference 99
+!
+!-----------------------------------------------------------------
+!  Route-map for unsuppressed prefixes to CE uplink neighbor (30)
+!-----------------------------------------------------------------
+route-map rm_unsup_to_ce deny 100
+ description ** Deny suppressed prefixes matching policy **
+ match policy-list rp_from_ab_vsc rp_from_ce rp_from_vtr_any rp_lolo_source
+!
+route-map rm_unsup_to_ce permit 200
+ description ** Set no-export on neighbor-scope suppressed prefixes from same block and AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_unsup_to_ce permit 210
+ description ** Set no-export on local-scope suppressed prefixes from same AS or adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+ set community no-export additive
+!
+route-map rm_unsup_to_ce permit 250
+ description ** Set limited scope on global/regional-scope suppressed prefixes tagged as do not suppress **
+ match policy-list rp_global_scope rp_regional_scope
+ match policy-list rp_do_not_suppress
+ continue 300
+ set community 2002:70 2002:75 additive
+!
+route-map rm_unsup_to_ce permit 260
+ description ** Set neighbor scope on other suppressed prefixes from same block and AS **
+ match policy-list rp_default_scope rp_global_scope rp_regional_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set comm-list cl_global_or_regional_scope delete
+ set community 2002:51 no-export additive
+!
+route-map rm_unsup_to_ce permit 270
+ description ** Set local scope on other suppressed prefixes from same-block adjacent AS **
+ match policy-list rp_default_scope rp_global_scope rp_regional_scope
+ match policy-list rp_same_block_adjacent_asn
+ continue 300
+ set comm-list cl_global_or_regional_scope delete
+ set community 2002:52 no-export additive
+!
+route-map rm_unsup_to_ce deny 290
+ description ** Deny all other suppressed prefixes **
+ match policy-list rp_everything
+!
+route-map rm_unsup_to_ce permit 300
+ description ** Set less preferred metric on internal suppressed prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_unsup_to_ce permit 310
+ description ** Set normal metric on all other suppressed prefixes **
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map to CE direct neighbor for primary path (36)
+!---------------------------------------------------------------
+route-map rm_to_ce_pri permit 100
+ description ** Allow and set no-export + normal metric on local loopback peering source prefix **
+ match route-type local
+ match policy-list rp_lolo_source
+ set metric 50
+ set community 2002:51 no-export additive
+!
+!------------------------------------------------------------------
+!  Route-map for import from VPNv4 into IPv4 address families (39)
+!------------------------------------------------------------------
+route-map rm_from_vpn_af deny 100
+ description ** Deny block-scope prefixes from other blocks **
+ match policy-list rp_other_block
+ match policy-list rp_block_scope
+!
+route-map rm_from_vpn_af permit 500
+ description ** Allow all other prefixes **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map for blue site summaries (39)
+!---------------------------------------------------------------
+route-map rm_site_summary_blue permit 100
+ description ** Set attributes for site summaries within VRF blue **
+ set metric 50
+ set community 163:[RESO ID] 2002:100 2002:1000
+!
+!---------------------------------------------------------------
+!  Route-map from CE direct neighbor for primary path (3B)
+!---------------------------------------------------------------
+route-map rm_from_ce_pri permit 100
+ description ** Allow loopback prefixes from adjacent AS **
+ match ip address prefix-list pl_loopback
+ match policy-list rp_adjacent_asn
+!
+!------------------------------------------------------------------------------------
+!  Route-map from CE uplink neighbor for Global Stub VPN - apply if VRF present (40)
+!------------------------------------------------------------------------------------
+route-map rm_from_ce_stub deny 100
+ description ** Deny non-default prefixes received from the WAN **
+ match ip address prefix-list pl_non_default
+ match policy-list rp_from_wan
+!
+route-map rm_from_ce_stub permit 110
+ description ** Set remote primary preference value on prefixes tagged as multiple-source **
+ match policy-list rp_multi_source
+ set local-preference 750
+!
+route-map rm_from_ce_stub permit 500
+ description ** Allow all other prefixes **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map for blue infrastructure summaries (40)
+!---------------------------------------------------------------
+route-map rm_infra_summary_blue permit 100
+ description ** Set attributes for infrastructure summaries within VRF blue **
+ set metric 50
+ set community 163:[RESO ID] 2002:8 2002:11 2002:51 2002:61 2002:100 2002:1000
+!
+!---------------------------------------------------------------
+!  Route-map to non-stub RR clients (42)
+!---------------------------------------------------------------
+route-map rm_to_rr_client deny 200
+ description ** Deny neighbor-scope prefixes from other AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_other_asn
+!
+route-map rm_to_rr_client deny 210
+ description ** Deny local-scope prefixes from non-adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_non_adjacent_asn
+!
+route-map rm_to_rr_client permit 500
+ description ** Allow all other prefixes **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map to CE uplink neighbor for VRF blue (43)
+!---------------------------------------------------------------
+route-map rm_to_ce_blue deny 100
+ description ** Deny prefixes matching policy **
+ match policy-list rp_from_ab_vsc rp_from_ce rp_from_vtr_any rp_lolo_source rp_site_multi_source
+!
+route-map rm_to_ce_blue permit 200
+ description ** Set no-export on neighbor-scope site prefixes from same block and AS **
+ match ip address prefix-list pl_site_allocation_blue pl_site_allocation_global
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+< match ipv6 address prefix-list pl6_site_allocation_blue >     ! Apply if IPv6 required at this site
+ continue 300
+ set community no-export additive
+!
+route-map rm_to_ce_blue permit 210
+ description ** Set no-export on local-scope site prefixes from same AS or adjacent AS **
+ match ip address prefix-list pl_site_allocation_blue pl_site_allocation_global
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+< match ipv6 address prefix-list pl6_site_allocation_blue >     ! Apply if IPv6 required at this site
+ continue 300
+ set community no-export additive
+!
+route-map rm_to_ce_blue permit 220
+ description ** Prepend AS on regional default route prefix **
+ match ip address prefix-list pl_default_route
+ match policy-list rp_regional_scope
+< match ipv6 address prefix-list pl6_none >                     ! Apply if IPv6 required at this site
+ continue 300
+ set as-path prepend [assigned campus MPLS cloud AS # x 2]
+!
+route-map rm_to_ce_blue permit 230
+ description ** Prepend AS on alternate/backup/sink prefixes **
+ match policy-list rp_multi_source_alternate rp_multi_source_backup rp_multi_source_sink
+ continue 300
+ set as-path prepend [assigned campus MPLS cloud AS # x 8]
+!
+route-map rm_to_ce_blue permit 250
+ description ** Allow other global/regional-scope prefixes **
+ match policy-list rp_global_scope rp_regional_scope
+ continue 300
+!
+route-map rm_to_ce_blue permit 260
+ description ** Allow default-scope prefixes from site allocation **
+ match ip address prefix-list pl_site_allocation_blue pl_site_allocation_global
+ match policy-list rp_default_scope
+< match ipv6 address prefix-list pl6_site_allocation_blue >     ! Apply if IPv6 required at this site
+ continue 300
+!
+! Apply the following stanza if IPv6 required at this site
+!
+route-map rm_to_ce_blue permit 270
+ description ** Allow regional IPv6 default route prefix **
+ match ip address prefix-list pl_none
+ match policy-list rp_regional_scope
+ match ipv6 address prefix-list pl6_default_route
+ continue 300
+!
+route-map rm_to_ce_blue deny 290
+ description ** Deny all other prefixes **
+ match policy-list rp_everything
+!
+route-map rm_to_ce_blue permit 300
+ description ** Set less preferred metric on internal prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_to_ce_blue permit 310
+ description ** Set normal metric on all other prefixes **
+ set metric 50
+!
+!-----------------------------------------------------------------------------------
+!  Route-map to IPv6 vTR neighbor for unsuppressed prefixes - apply if present (46)
+!-----------------------------------------------------------------------------------
+route-map rm_unsup_to_vtr deny 100
+ description ** Deny suppressed prefixes matching policy **
+ match policy-list rp_from_ab_vsc rp_from_ce rp_from_vtr_any
+!
+route-map rm_unsup_to_vtr permit 200
+ description ** Allow neighbor-scope suppressed prefixes from same block and AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+!
+route-map rm_unsup_to_vtr permit 210
+ description ** Allow local-scope suppressed prefixes from same AS or adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+!
+route-map rm_unsup_to_vtr permit 250
+ description ** Set limited scope on global/regional-scope suppressed prefixes tagged as do not suppress **
+ match policy-list rp_global_scope rp_regional_scope
+ match policy-list rp_do_not_suppress
+ continue 300
+ set community 2002:70 2002:75 additive
+!
+route-map rm_unsup_to_vtr permit 260
+ description ** Set neighbor scope on other suppressed prefixes from same block and AS **
+ match policy-list rp_default_scope rp_global_scope rp_regional_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+ set comm-list cl_global_or_regional_scope delete
+ set community 2002:51 additive
+!
+route-map rm_unsup_to_vtr permit 270
+ description ** Set local scope on other suppressed prefixes from same-block adjacent AS **
+ match policy-list rp_default_scope rp_global_scope rp_regional_scope
+ match policy-list rp_same_block_adjacent_asn
+ continue 300
+ set comm-list cl_global_or_regional_scope delete
+ set community 2002:52 additive
+!
+route-map rm_unsup_to_vtr deny 290
+ description ** Deny all other suppressed prefixes **
+ match policy-list rp_everything
+!
+route-map rm_unsup_to_vtr permit 300
+ description ** Set less preferred metric on internal suppressed prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_unsup_to_vtr permit 310
+ description ** Set normal metric on all other suppressed prefixes **
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map for VRF blue to global table (4E)
+!---------------------------------------------------------------
+route-map rm_blue_to_global deny 100
+ description ** Deny prefixes matching policy **
+ match policy-list rp_from_ab_vsc rp_from_global
+!
+route-map rm_blue_to_global permit 200
+ description ** Allow prefixes from same block and AS **
+ match policy-list rp_same_block_same_asn
+ continue 300
+!
+route-map rm_blue_to_global permit 220
+ description ** Allow default route prefix **
+ match ip address prefix-list pl_default_route
+ continue 300
+!
+route-map rm_blue_to_global deny 290
+ description ** Deny all other prefixes **
+ match policy-list rp_everything
+!
+route-map rm_blue_to_global permit 300
+ description ** Set less preferred metric on internal prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_blue_to_global permit 310
+ description ** Set normal metric on all other prefixes **
+ set metric 50
+!
+!---------------------------------------------------------------
+!  Route-map from CE uplink neighbor for VRF blue (4E)
+!---------------------------------------------------------------
+route-map rm_from_ce_blue permit 90
+ description ** Set site scope on displaced host prefixes from site allocation **
+ match ip address prefix-list pl_site_allocation_blue
+ match policy-list rp_displaced_host
+< match ipv6 address prefix-list pl6_none >                     ! Apply if IPv6 required at this site
+ set community 2002:53 additive
+!
+route-map rm_from_ce_blue deny 100
+ description ** Deny all other prefixes from site allocation coming from WAN **
+ match ip address prefix-list pl_site_allocation_blue
+ match policy-list rp_from_wan
+< match ipv6 address prefix-list pl6_site_allocation_blue >     ! Apply if IPv6 required at this site
+!
+route-map rm_from_ce_blue deny 110
+ description ** Deny prefixes matching control lists **
+ match ip address prefix-list pl_site_allocation_global pl_non_routable
+< match ipv6 address prefix-list pl6_non_routable >             ! Apply if IPv6 required at this site
+!
+route-map rm_from_ce_blue deny 120
+ description ** Deny all other displaced host prefixes **
+ match policy-list rp_displaced_host
+!
+route-map rm_from_ce_blue permit 200
+ description ** Allow limited-scope prefixes matching policy **
+ match policy-list rp_bgp_ctl rp_explicit_sub_agg rp_prefix_reduction_site rp_speaker_loopback
+!
+route-map rm_from_ce_blue deny 290
+ description ** Deny all other limited-scope prefixes **
+ match policy-list rp_limited_scope
+!
+route-map rm_from_ce_blue permit 300
+ description ** Set remote alternate preference value on prefixes tagged as alternate **
+ match policy-list rp_multi_source_alternate
+ set local-preference 650
+!
+route-map rm_from_ce_blue permit 310
+ description ** Set remote backup preference value on prefixes tagged as backup **
+ match policy-list rp_multi_source_backup
+ set local-preference 450
+!
+route-map rm_from_ce_blue permit 320
+ description ** Set remote sink preference value on prefixes tagged as sink **
+ match policy-list rp_multi_source_sink
+ set local-preference 250
+!
+route-map rm_from_ce_blue permit 390
+ description ** Set remote primary preference value on all other prefixes tagged as multiple-source **
+ match policy-list rp_multi_source
+ set local-preference 750
+!
+route-map rm_from_ce_blue permit 500
+ description ** Allow all other prefixes unchanged **
+ match policy-list rp_everything
+!
+!---------------------------------------------------------------
+!  Route-map for global table to VRF blue (4E)
+!---------------------------------------------------------------
+route-map rm_global_to_blue deny 100
+ description ** Deny prefixes matching policy **
+ match policy-list rp_from_ab_vsc
+!
+route-map rm_global_to_blue permit 200
+ description ** Allow global management infrastructure prefixes into blue VRF **
+ match ip address prefix-list pl_site_allocation_global
+!
+!---------------------------------------------------------------
+!  Route-map for management summaries in global table (60)
+!---------------------------------------------------------------
+route-map rm_mgmt_summary permit 100
+ description ** Set attributes for global routing table management summaries **
+ set metric 50
+ set community 163:[RESO ID] 2002:0 2002:11 2002:800 2002:1000
+!
+!---------------------------------------------------------------------------
+!  Route-map to IPv6 vTR neighbor for IPv4 prefixes - apply if present (74)
+!---------------------------------------------------------------------------
+route-map rm_to_vtr deny 100
+ description ** Deny prefixes matching policy **
+ match policy-list rp_from_ab_vsc rp_from_ce rp_from_vtr_any rp_site_multi_source
+!
+route-map rm_to_vtr deny 110
+ description ** Deny default route prefix **
+ match ip address prefix-list pl_default_route
+!
+route-map rm_to_vtr permit 200
+ description ** Allow neighbor-scope prefixes from same block and AS **
+ match policy-list rp_neighbor_scope
+ match policy-list rp_same_block_same_asn
+ continue 300
+!
+route-map rm_to_vtr permit 210
+ description ** Allow local-scope prefixes from same AS or adjacent AS **
+ match policy-list rp_local_scope
+ match policy-list rp_adjacent_asn rp_same_asn
+ continue 300
+!
+route-map rm_to_vtr permit 250
+ description ** Allow global/regional/default-scope prefixes **
+ match policy-list rp_default_scope rp_global_scope rp_regional_scope
+ continue 300
+!
+route-map rm_to_vtr deny 290
+ description ** Deny all other prefixes **
+ match policy-list rp_everything
+!
+route-map rm_to_vtr permit 300
+ description ** Set less preferred metric on internal prefixes from same block any AS **
+ match policy-list rp_internal_same_block_any_asn
+ set metric 85
+!
+route-map rm_to_vtr permit 310
+ description ** Set normal metric on all other prefixes **
+ set metric 50
+!
+!--------------------------------------------------------------------------------------
+!  Start of section for route-maps with variable name - sorted within route-maps above
+!--------------------------------------------------------------------------------------
+!
+! Repeat the following route-map definition for each additional VRF, if any,
+!   with no explicit rm_site_summary_[VRF name] defined.
+!
+!---------------------------------------------------------------
+!  Route-map for site summaries for a VRF
+!---------------------------------------------------------------
+route-map rm_site_summary_[VRF name] permit 100
+ description ** Set attributes for site summaries within VRF [VRF name] **
+ set metric 50
+ set community 163:[RESO ID] 2002:[zone tag] 2002:[VPNID] 2002:1000
+!
+!---------------------------------------------------------------
+!  End of section for route-maps with variable name
+!---------------------------------------------------------------
+!
+! Apply the following command if access-list 80 defined
+!
+snmp-server community [assigned site RO string] RO 80
+!
+snmp-server community [AT&T assigned RW string] RW 93
+snmp-server community [AT&T assigned RO string] RO 95
+snmp-server ifindex persist
+snmp-server trap timeout 180
+snmp-server trap-source Loopback0
+snmp-server queue-length 100
+snmp-server location [region]/[country]/[reso]/vSC/[UTCoffset]/[building-floor]/[closet]/[rack]</[SNMP local description]>
+snmp-server ip dscp 18
+snmp-server contact [ManageNow queue]/[Contact Info]/[City]/[WAN Tier]/vSC
+snmp-server system-shutdown
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps fru-ctrl ps-output-change status
+snmp-server enable traps entity
+snmp-server enable traps envmon fan shutdown supply temperature status
+snmp-server enable traps bgp
+snmp-server enable traps config
+snmp-server enable traps rf
+!
+! Repeat one of the following commands for each server address specified in spreadsheet, as appropriate
+!   All devices - iGEMS DMS and INCM servers
+!
+snmp-server host [SNMP server IP address from spreadsheet] version 2c [assigned site RO string] 
+snmp-server host [INCM server IP address from spreadsheet] version 2c [assigned site RO string]  config
+!
+snmp ifmib ifindex persist
+!
+mpls ldp router-id Loopback0 force
+!
+!
+!
+ipv6 access-list acl-copp-match-mld
+ permit icmp any any mld-report
+ permit icmp any any mld-query
+ permit icmp any any mld-reduction
+ permit icmp any any 143
+!
+ipv6 access-list acl-copp-match-ndv6
+ permit icmp any any nd-na
+ permit icmp any any nd-ns
+ permit icmp any any router-advertisement
+ permit icmp any any router-solicitation
+ permit icmp any any redirect
+!
+ipv6 access-list acl-copp-match-pimv6-data
+ deny 103 any host FF02::D
+ permit 103 any any
+!
+control-plane
+ service-policy input policy-default-autocopp
+!
+! Apply the following banner if device has an exception
+!
+banner exec ^ *** Cisco 6880-X-LE / 16.1.1 / vSCa-vbai-6880.txt / EXCEPTION *** ^
+!
+! Apply the following banner if device does NOT have an exception
+!
+banner exec ^ *** Cisco 6880-X-LE / 16.1.1 / vSCa-vbai-6880.txt *** ^
+!
+banner login ^
+***********************************************************************
+*  GTAC                                                               *
+***********************************************************************
+*  Warning Notice:                                                    *
+*    This system is restricted solely to AT&T authorized users for    *
+*    legitimate business purposes only. The actual or attempted       *
+*    unauthorized access, use, or modification of this system is      *
+*    strictly prohibited by AT&T. Unauthorized users are subject to   *
+*    Company disciplinary proceedings and/or criminal and civil       *
+*    penalties under state, federal, or other applicable domestic and *
+*    foreign laws. The use of this system may be monitored and        *
+*    recorded for administrative and security reasons. Anyone         *
+*    accessing this system expressly consents to such monitoring and  *
+*    is advised that if monitoring reveals possible evidence of       *
+*    criminal activity, AT&T may provide the evidence of such         *
+*    activity to law enforcement officials. All users must comply     *
+*    with AT&T company policies regarding the protection of AT&T      *
+*    information assets.                                              *
+***********************************************************************
+^
+!
+line con 0
+ session-timeout 15 
+ exec-timeout 15 0
+ logging synchronous
+ media-type rj45
+!
+! AUX port is reserved and is not used for external connectivity
+!
+line aux 0
+ session-timeout 15 
+ exec-timeout 15 0
+ logging synchronous
+line vty 0 4
+ session-timeout 15 
+ access-class al_vty_access_aspr in
+ exec-timeout 15 0
+ logging synchronous
+ transport input ssh
+line vty 5 15
+ session-timeout 15 
+ access-class al_vty_access_aspr in
+ exec-timeout 15 0
+ logging synchronous
+ transport input ssh
+!
+ntp source Loopback0
+ntp access-group peer 79
+ntp update-calendar
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   All devices - iGEMS DMS servers (2)
+!
+ntp server [NTP server IP address from spreadsheet]
+!
+diagnostic bootup level complete
+no diagnostic cns publish
+no diagnostic cns subscribe
+!
+end
