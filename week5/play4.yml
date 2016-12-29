@@ -2,4 +2,4 @@
   hosts: local
 
   roles:
-    - vSA
+    - vsc
