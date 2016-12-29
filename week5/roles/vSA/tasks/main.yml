@@ -2,8 +2,8 @@
 - hosts: local
   tasks:
     - name: Generate configuration file
-      template: src=~/ansible/vSCa-vba-lo-6880.lo0.j2
-                dest=~/ansible/cfgs/{{item.site_prefix}}-vsc-a.txt
+      template: src=~/ansible/vSA-3650d.j2
+                dest=~/ansible/cfgs/{{item.site_prefix}}-vsa-1.txt
       with_items:
         - {site_prefix: bld, b1: 1, x1: 6 }
         - {site_prefix: pok, b1: 2, x1: 7 } 
