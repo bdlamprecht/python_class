@@ -1,0 +1,1363 @@
+!
+version 15.2
+no service pad
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+service password-encryption
+service compress-config
+no service dhcp
+!
+hostname {{ site prefix }}-vsa-{{ local-id }}
+!
+boot-start-marker
+boot system switch all flash:cat3k_caa-universalk9.SPA.03.07.02.E.152-3.E2.bin
+boot system switch all flash:
+boot-end-marker
+!
+!
+vrf definition Mgmt-vrf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+logging userinfo
+logging buffered 1024000 notifications
+no logging console
+enable secret {{ local enable password }}
+!
+username failsafe secret {{ local password }}
+aaa new-model
+!
+!
+aaa group server tacacs+ GTAC
+ !
+ ! Specify "port {{ TCP port from spreadsheet }}" in the following commands if TCP port is other than the default 49
+ !
+ server-private {{ GTAC server 1 IP address from spreadsheet }} < port {{ TCP port from spreadsheet }} > timeout 6 key {{ GTAC administrator assigned key }}
+ server-private {{ GTAC server 2 IP address from spreadsheet }} < port {{ TCP port from spreadsheet }} > timeout 6 key {{ GTAC administrator assigned key }}
+ !
+ ip tacacs source-interface Vlan{{ 1900+i }}
+!
+aaa authentication attempts login 5
+aaa authentication fail-message ^Failed login. Five consecutive fails will revoke.^
+aaa authentication login default group GTAC local
+aaa authentication enable default group GTAC enable
+aaa authorization console
+aaa authorization config-commands
+aaa authorization exec default group GTAC if-authenticated 
+aaa authorization commands 15 default group GTAC none 
+aaa accounting exec default start-stop group GTAC
+aaa accounting commands 15 default start-stop group GTAC
+aaa accounting connection default start-stop group GTAC
+aaa accounting system default start-stop group GTAC
+no aaa accounting system guarantee-first
+!
+!
+!
+!
+!
+!
+aaa session-id common
+switch 1 provision ws-c3650-{{ 24pd|48pd }}
+!
+!
+!
+!
+!
+no ip source-route
+!
+no ip domain-lookup
+ip domain-name attmgmt.ibm.com
+ip name-server {{ DNS server 1 IP address from spreadsheet }}
+ip name-server {{ DNS server 2 IP address from spreadsheet }}
+!
+!
+login on-failure log
+login on-success log
+ipv6 nd raguard policy pp6_raguard_client
+!
+ipv6 nd raguard policy pp6_raguard_trust
+ trusted-port
+!
+ipv6 dhcp guard policy pp6_dhcp_client
+ipv6 dhcp guard policy pp6_dhcp_trust
+ trusted-port
+qos queue-softmax-multiplier 100
+vtp domain {{ site prefix }}
+vtp mode transparent
+!
+!
+errdisable recovery cause udld
+errdisable recovery interval 180
+diagnostic bootup level complete
+archive
+ log config
+  logging enable
+  notify syslog contenttype plaintext
+  hidekeys
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+spanning-tree vlan 1700-1799,1901-4000 priority 8192
+spanning-tree vlan 1700-1799,1901-4000 forward-time 6
+spanning-tree vlan 1700-1799,1901-4000 max-age 8
+hw-switch switch 1 logging onboard message level 3
+!
+redundancy
+ mode sso
+!
+! Repeat the following yellow edge VLAN definition (v=10-19) for each matching VLAN required
+!
+vlan {{ 1700+v }}
+ name vSA{{ i }}/yellow-edge{{ v-9 }}/{{ zone description }}
+!
+! Repeat the following green edge VLAN definition (v=20-29) for each matching VLAN required
+!
+vlan {{ 1700+v }}
+ name vSA{{ i }}/green-edge{{ v-19 }}/{{ zone description }}
+!
+! Repeat the following blue edge VLAN definition (v=30-39) for each matching VLAN required
+!
+vlan {{ 1700+v }}
+ name vSA{{ i }}/blue-edge{{ v-29 }}/{{ zone description }}
+!
+vlan {{ 1900+i }}
+ name {{ vSD{{ n }}|vOD{{ n }}|eCD|eND }}-vSA{{ i }}/global/xA_mgmt
+!
+! Apply the following section for vSD VLAN type profile 2, if used on connected vSD
+!
+! Repeat the following blue data VLAN definition (v=0-19) for each matching VLAN required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name vSD{{ n }}-vSA{{ i }}/blue-{{ v+1 }}</{{ local description }}>
+!
+! Repeat the following green/yellow/gray data VLAN definition (v=20-39) for each matching VLAN required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name vSD{{ n }}-vSA{{ i }}/{{ green|yellow|gray }}-{{ v-19 }}/{{ zone description }}
+!
+! Repeat the following blue data VLAN definition (v=40-44) for each matching VLAN required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name vSD{{ n }}-vSA{{ i }}/blue-{{ v+1 }}</{{ local description }}>
+!
+! Repeat the following backend VLAN definition (v=45-46) for each matching VLAN required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name vSD{{ n }}-vSA{{ i }}/back-{{ v-44 }}</{{ local description }}>
+!
+! Apply the following global device management VLAN definition (v=49), if required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name vSD{{ n }}-vSA{{ i }}/global-1/dev_mgmt
+!
+! End of section for vSD VLAN type profile 2
+!
+! Apply the following section for vOD-eCD-eND VLAN type profile, if used on connected vOD, eCD or eND
+!
+! Repeat the following blue data VLAN definition (v=0-4) for each matching VLAN required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name {{ vOD{{ n }}|eCD|eND }}-vSA{{ i }}/blue-{{ v+1 }}</{{ local description }}>
+!
+! Repeat the following green/yellow/gray data VLAN definition (v=15-19) for each matching VLAN required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name {{ vOD{{ n }}|eCD|eND }}-vSA{{ i }}/{{ green|yellow|gray }}-{{ v-14 }}/{{ zone description }}
+!
+! Apply the following global device management VLAN definition (v=24), if required
+!
+vlan {{ 2000+20*v+q2+i }}
+ name {{ vOD{{ n }}|eCD|eND }}-vSA{{ i }}/global-1/dev_mgmt
+!
+! End of section for vOD-eCD-eND VLAN type profile
+!
+vlan 4094
+ name vSA/Null
+lldp run
+cdp timer 10
+cdp holdtime 30
+!
+ip tcp path-mtu-discovery
+ip ssh version 2
+ip ssh dscp 18
+!
+class-map match-any cm_att_ipsla_class1
+ match access-group name al_att_ipsla_class1
+class-map match-any cm_att_ipsla_class3
+ match access-group name al_att_ipsla_class3
+class-map match-any cm_att_ipsla_class2
+ match access-group name al_att_ipsla_class2
+class-map match-any cm_att_forward_class3
+ match access-group name al_att_forward_class3
+class-map match-any cm_att_mgmt_return_class2
+ match access-group name al_att_mgmt_return_class2
+class-map match-any cm_att_mgmt_return_class3
+ match access-group name al_att_mgmt_return_class3
+class-map match-any cm_att_class1
+ match access-group name al_att_class1
+class-map match-any cm_att_voip_return_class2
+ match access-group name al_att_voip_return_class2
+class-map match-any cm_att_voip_forward_class2
+ match access-group name al_att_voip_forward_class2
+class-map match-any cm_att_data_forward_class2
+ match access-group name al_att_data_forward_class2
+class-map match-any cm_att_mgmt_forward_class3
+ match access-group name al_att_mgmt_forward_class3
+class-map match-any cm_att_mgmt_forward_class2
+ match access-group name al_att_mgmt_forward_class2
+class-map match-any non-client-nrt-class
+class-map match-any cm_att_data_return_class2_user
+ match access-group name al_att_data_return_class2_user
+class-map match-any cm_att_return_class3
+ match access-group name al_att_return_class3
+class-map match-any cm_dscp_att_class2
+ match ip dscp af31  af32 
+class-map match-any cm_dscp_att_class3
+ match ip dscp af21  af22 
+class-map match-any cm_dscp_att_class1
+ match ip dscp ef 
+class-map match-any cm_att_data_return_class2_server
+ match access-group name al_att_data_return_class2_server
+!
+policy-map pm_att_classes_data
+ class cm_att_data_forward_class2
+  set dscp af31
+ class cm_att_data_return_class2_server
+  set dscp af31
+ class cm_att_data_return_class2_user
+  set dscp af31
+ class cm_att_forward_class3
+  set dscp af21
+ class cm_att_return_class3
+  set dscp af21
+ class class-default
+  set dscp default
+policy-map pm_trust_dscp_att_cos
+ class cm_dscp_att_class1
+  set cos 5
+ class cm_dscp_att_class2
+  set cos 3
+ class cm_dscp_att_class3
+  set cos 2
+ class class-default
+  set cos 0
+policy-map pm_att_queuing
+ class cm_dscp_att_class1
+  priority level 1
+ class cm_dscp_att_class2
+  bandwidth remaining percent 25 
+ class cm_dscp_att_class3
+  bandwidth remaining percent 25 
+ class class-default
+  bandwidth remaining percent 25 
+policy-map pm_att_classes_voip_data
+ class cm_att_class1
+  set dscp ef
+ class cm_att_voip_forward_class2
+  set dscp af31
+ class cm_att_data_forward_class2
+  set dscp af31
+ class cm_att_voip_return_class2
+  set dscp af31
+ class cm_att_data_return_class2_server
+  set dscp af31
+ class cm_att_data_return_class2_user
+  set dscp af31
+ class cm_att_forward_class3
+  set dscp af21
+ class cm_att_return_class3
+  set dscp af21
+ class class-default
+  set dscp default
+policy-map port_child_policy
+ class non-client-nrt-class
+  bandwidth remaining ratio 10
+policy-map pm_att_classes_mgmt
+ class cm_att_mgmt_forward_class2
+  set dscp af31
+ class cm_att_mgmt_return_class2
+  set dscp af31
+ class cm_att_mgmt_forward_class3
+  set dscp af21
+ class cm_att_mgmt_return_class3
+  set dscp af21
+ class class-default
+  set dscp default
+policy-map pm_att_classes_ipsla_data
+ class cm_att_ipsla_class1
+  set dscp ef
+ class cm_att_ipsla_class2
+  set dscp af31
+ class cm_att_ipsla_class3
+  set dscp af21
+ class class-default
+  set dscp default
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ description ** RESERVED **
+ vrf forwarding Mgmt-vrf
+ no ip address
+ shutdown
+ negotiation auto
+!
+! Apply one of the following interface definitions for each port 1-23|47 in chassis 1
+!
+! Port option for chassis 1 - single-connected servers (non-trunked), if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description {{ server name }}/{{ cable ID }}/{{ VRF name }}</{{ local description }}>
+ switchport access vlan {{ 2000+20*v+q2+i|1700+v }}
+ switchport mode access
+ load-interval 60
+< speed 100 >                                      ! Apply if speed auto-negotiation with device fails
+< duplex full >                                    ! Apply only for speed 100
+ ipv6 nd raguard attach-policy pp6_raguard_client
+ ipv6 dhcp guard attach-policy pp6_dhcp_client
+ no snmp trap link-status
+ storm-control broadcast level 5.00
+ storm-control multicast level 5.00
+ no lldp transmit
+ no lldp receive
+ no cdp enable
+ spanning-tree bpduguard enable
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Port option for chassis 1 - single-connected servers trunked, if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description {{ server name }}/{{ cable ID }}/trunk</{{ local description }}>
+ switchport trunk native vlan 4094
+ switchport trunk allowed vlan {{ list of valid 1700+v,2000+20*v+q2+i VLANs }}
+ switchport mode trunk
+ switchport nonegotiate
+ load-interval 60
+< speed 100 >                                      ! Apply if speed auto-negotiation with device fails
+< duplex full >                                    ! Apply only for speed 100
+ ipv6 nd raguard attach-policy pp6_raguard_client
+ ipv6 dhcp guard attach-policy pp6_dhcp_client
+ no snmp trap link-status
+ storm-control broadcast level 5.00
+ storm-control multicast level 5.00
+ no lldp transmit
+ no lldp receive
+ no cdp enable
+ spanning-tree bpduguard enable
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Port option for chassis 1 - non-virtualized single firewall inside interface, if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description {{ firewall name }}/{{ cable ID }}/{{ VRF name }}/inside</{{ local description }}>
+ switchport access vlan {{ 2000+20*v+q2+i }}
+ switchport mode access
+ load-interval 60
+< speed 100 >                                      ! Apply if speed auto-negotiation with device fails
+< duplex full >                                    ! Apply only for speed 100
+ ipv6 nd raguard attach-policy pp6_raguard_client
+ ipv6 dhcp guard attach-policy pp6_dhcp_client
+ storm-control broadcast level 5.00
+ storm-control multicast level 5.00
+ no lldp transmit
+ no lldp receive
+ no cdp enable
+ spanning-tree bpduguard enable
+< service-policy input pm_trust_dscp_att_cos >     ! Apply if infrastructure behind firewall supports standard QoS marking
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Port option for chassis 1 - VoIP gateway, if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description {{ VG name }}/{{ cable ID }}</{{ local description }}>
+ switchport access vlan {{ 2000+20*v+q2+i }}
+ switchport mode access
+ load-interval 60
+< speed 100 >                                      ! Apply if speed auto-negotiation with VG fails
+< duplex full >                                    ! Apply only for speed 100
+ ipv6 nd raguard attach-policy pp6_raguard_client
+ ipv6 dhcp guard attach-policy pp6_dhcp_client
+ storm-control broadcast level 5.00
+ storm-control multicast level 5.00
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Port option for chassis 1 - IP SLA transaction probe, if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description {{ TP name }}/{{ cable ID }}/blue/IPSLA</{{ local description }}>
+ switchport access vlan {{ one of server1-5 (v=0-4) 2000+20*v+q2+i VLANs }}
+ switchport mode access
+ load-interval 60
+< speed 100 >                                      ! Apply if speed auto-negotiation with TP fails
+< duplex full >                                    ! Apply only for speed 100
+ ipv6 nd raguard attach-policy pp6_raguard_client
+ ipv6 dhcp guard attach-policy pp6_dhcp_client
+ spanning-tree bpduguard enable
+ service-policy input pm_att_classes_ipsla_data
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Port option for chassis 1 - other network device blue interface, if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description {{ device name }}/{{ cable ID }}/blue</{{ local description }}>
+ switchport access vlan {{ one of server1-5 (v=0-4) 2000+20*v+q2+i VLANs }}
+ switchport mode access
+ load-interval 60
+ ipv6 nd raguard attach-policy pp6_raguard_client
+ ipv6 dhcp guard attach-policy pp6_dhcp_client
+ storm-control broadcast level 5.00
+ storm-control multicast level 5.00
+ spanning-tree bpduguard enable
+< service-policy input pm_trust_dscp_att_cos >     ! Apply if device supports standard QoS marking
+< service-policy input pm_att_classes_mgmt >       ! Apply if device does NOT support standard QoS marking
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Port option for chassis 1 - unused port, if any
+!
+interface GigabitEthernet1/0/{{ 1-23|47 }}
+ description ** Not In Use **
+ shutdown
+ no snmp trap link-status
+!
+! End of port options for chassis 1
+!
+interface GigabitEthernet1/0/{{ 24|48}
+ description ** RESERVED-SPAN **
+ switchport mode access
+ shutdown
+ no snmp trap link-status
+!
+interface GigabitEthernet1/1/1
+ description ** RESERVED **
+ shutdown
+ no snmp trap link-status
+!
+interface GigabitEthernet1/1/2
+ description ** RESERVED **
+ switchport mode access
+ shutdown
+ no snmp trap link-status
+!
+interface TenGigabitEthernet1/1/3
+ description {{ site prefix }}/vSA{{ i }}-{{ vSD{{ n }}a|vOD{{ n }}a|eCDa|eND }}/trunk</{{ local description }}>
+ switchport trunk native vlan 4094
+ switchport trunk allowed vlan {{ list of valid 1900+i,2000+20*v+q2+i VLANs }}
+ switchport mode trunk
+ switchport nonegotiate
+ load-interval 60
+ ipv6 nd raguard attach-policy pp6_raguard_trust
+ ipv6 dhcp guard attach-policy pp6_dhcp_trust
+ udld port {{ aggressive|disable }}                    ! Aggressive if other end is Cisco and supports UDLD, else disable
+ service-policy input pm_trust_dscp_att_cos
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! 2nd uplink options - apply one option only
+!
+! Option 1 - uplink to vOD{{ n }}b/eCDb
+!
+interface TenGigabitEthernet1/1/4
+ description {{ site prefix }}/vSA{{ i }}-{{ vSD{{ n }}b|vOD{{ n }}b|eCDb }}/trunk</{{ local description }}>
+ switchport trunk native vlan 4094
+ switchport trunk allowed vlan {{ list of valid 1900+i,2000+20*v+q2+i VLANs }}
+ switchport mode trunk
+ switchport nonegotiate
+ load-interval 60
+ ipv6 nd raguard attach-policy pp6_raguard_trust
+ ipv6 dhcp guard attach-policy pp6_dhcp_trust
+ udld port {{ aggressive|disable }}                    ! Aggressive if other end is Cisco and supports UDLD, else disable
+ service-policy input pm_trust_dscp_att_cos
+ service-policy output pm_att_queuing
+ no shutdown
+!
+! Option 2 - no 2nd uplink to eND
+!
+interface TenGigabitEthernet1/1/4
+ description ** RESERVED **
+ shutdown
+ no snmp trap link-status
+!
+! End of 2nd uplink options
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+! Repeat the following yellow edge VLAN interface definition (v=10-19) for each matching VLAN present
+!
+interface Vlan{{ 1700+v }}
+ description {{ site prefix }}/vSA{{ i }}/yellow-edge{{ v-9 }}/{{ a.b.c.s+0 }}/{{ mm }}/{{ zone description }}
+ no ip address
+ service-policy input pm_att_classes_data
+ no shutdown
+!
+! Repeat the following green edge VLAN interface definition (v=20-29) for each matching VLAN present
+!
+interface Vlan{{ 1700+v }}
+ description {{ site prefix }}/vSA{{ i }}/green-edge{{ v-19 }}/{{ a.b.c.s+0 }}/{{ mm }}/{{ zone description }}
+ no ip address
+ service-policy input pm_att_classes_data
+ no shutdown
+!
+! Repeat the following blue edge VLAN interface definition (v=30-39) for each matching VLAN present
+!
+interface Vlan{{ 1700+v }}
+ description {{ site prefix }}/vSA{{ i }}/blue-edge{{ v-29 }}/{{ a.b.c.s+0 }}/{{ mm }}/{{ zone description }}
+ no ip address
+ service-policy input pm_att_classes_data
+ no shutdown
+!
+interface Vlan{{ 1900+i }}
+ description {{ site prefix }}/{{ vSD{{ n }}|vOD{{ n }}|eCD|eND }}-vSA{{ i }}/global/9.{{ b1.z2.aslot+0 }}/29/xA_mgmt</{{ local description }}>
+ ip address 9.{{ b1.z2.aslot+5 }} 255.255.255.248
+ no ip redirects
+ no ip proxy-arp
+ load-interval 60
+ arp timeout 420
+ service-policy input pm_att_classes_mgmt
+ no shutdown
+!
+! Apply the following section for vSD VLAN type profile 2, if used on connected vSD
+!
+! Repeat the following blue data VLAN interface definition (v=0-19) for each matching VLAN present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/vSD{{ n }}-vSA{{ i }}/blue-{{ v+1 }}</{{ VRF name }}>/9.{{ b2.c.s+0 }}/{{ mm }}</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_voip_data
+ no shutdown
+!
+! Repeat the following green/yellow/gray data VLAN inteface definition (v=20-39) for each matching VLAN present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/vSD{{ n }}-vSA{{ i }}/{{ green|yellow|gray }}-{{ v-19 }}/{{ VRF name }}/{{ a.b.c.s+0 }}/{{ mm }}/{{ zone description }}</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_data
+ no shutdown
+!
+! Repeat the following blue data VLAN interface definition (v=40-44) for each matching VLAN present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/vSD{{ n }}-vSA{{ i }}/blue-{{ v+1 }}</{{ VRF name }}>/9.{{ b2.c.s+0 }}/{{ mm }}</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_voip_data
+ no shutdown
+!
+! Repeat the following backend VLAN interface definition (v=45-46) for each matching VLAN present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/vSD{{ n }}-vSA{{ i }}/back-{{ v-44 }}/local1/{{ a.b.c.s+0 }}/{{ mm }}</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_data
+ no shutdown
+!
+! Apply the following global device management VLAN interface definition (v=49), if present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/vSD{{ n }}-vSA{{ i }}/global-1/{{ a.b.c.s+0 }}/{{ mm }}/dev_mgmt</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_mgmt
+ no shutdown
+!
+! End of section for vSD VLAN type profile 2vOD-eCD-eND VLAN type profile
+!
+! Apply the following section for vOD-eCD-eND VLAN type profile, if used on connected vOD, eCD or eND
+!
+! Repeat the following blue data VLAN interface definition (v=0-4) for each matching VLAN present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/{{ vOD{{ n }}|eCD|eND }}-vSA{{ i }}/blue-{{ v+1 }}</{{ VRF name }}>/9.{{ b2.c.s+0 }}/{{ mm }}</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_voip_data
+ no shutdown
+!
+! Repeat the following green/yellow/gray data VLAN interface definition (v=15-19) for each matching VLAN present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/{{ vOD{{ n }}|eCD|eND }}-vSA{{ i }}/{{ green|yellow|gray }}-{{ v-14 }}/{{ VRF name }}/{{ a.b.c.s+0 }}/{{ mm }}/{{ zone description }}</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_data
+ no shutdown
+!
+! Apply the following global device management VLAN interface definition (v=24), if present
+!
+interface Vlan{{ 2000+20*v+q2+i }}
+ description {{ site prefix }}/{{ vOD{{ n }}|eCD|eND }}-vSA{{ i }}/global-1/9.{{ b1.c.s+0 }}/{{ mm }}/dev_mgmt</{{ local description }}>
+ no ip address
+ service-policy input pm_att_classes_mgmt
+ no shutdown
+!
+! End of section for vOD-eCD-eND VLAN type profile
+!
+ip default-gateway 9.{{ b1.z2.aslot+1 }}
+no ip forward-protocol nd
+no ip http server
+no ip http secure-server
+ip ftp source-interface Vlan{{ 1900+i }}
+ip tftp source-interface Vlan{{ 1900+i }}
+!
+ip access-list standard al_vty_access_aspr
+ remark /**********************************************
+ remark Restrict VTY access
+ remark ***********************************************
+ remark Site network infrastructure ranges
+ remark **********************************************/
+ permit 9.{{ b1.x }}.0 0.0.{{ 255-mmm }}.255                       ! Global management first range
+ !
+ ! Repeat the following entry for each additional global management allocation, if any
+ !
+ permit 9.{{ b1.y }}.0 0.0.{{ 255-mmm }}.255                       ! Global management additional range
+ !
+ remark /*********************************************-
+ remark AT&T iGEMS management segments
+ remark *********************************************-/
+ permit 135.89.45.0 0.0.0.255
+ permit 135.89.84.128 0.0.0.127
+ permit 135.89.176.0 0.0.0.255
+ permit 135.89.213.0 0.0.0.255
+ remark /********************************************--
+ remark Global AT&T enclave address pool
+ remark ********************************************--/
+ permit 9.65.6.0 0.0.1.255
+ permit 9.78.8.0 0.0.7.255
+ permit 9.78.16.0 0.0.15.255
+ permit 9.78.32.0 0.0.15.255
+ deny   any log
+!
+ip access-list extended al_att_class1
+ remark /**********************************************
+ remark QoS class 1 - classification policy
+ remark Real-time traffic
+ remark **********************************************/
+ remark -
+ remark Exclude VoiceSuite/softclient from class 1 treatment
+ deny   udp any any range 5004 5005
+ !
+ ! Apply the following section if any Voice Gateways are present on this switch
+ !
+ remark -
+ remark Voice Gateway
+ !
+ ! Repeat the following entry for each Voice Gateway present
+ !
+ permit udp host 9.{{ b.c.Voice Gateway }} range 16384 32767 any
+ !
+ ! End Voice Gateway section
+ !
+ ! Apply the following section if Siemens HiPath 8000 servers are present on this switch
+ !
+ remark -
+ remark HiPath servers
+ !
+ ! Repeat the following entry for each HiPath server present
+ !
+ permit udp host 9.{{ b.c.HiPath server }} range 5100 6635 any
+ !
+ ! End HiPath section
+ !
+ deny   ip any any
+!
+! Class 2 forward and server return ACL options - apply one option only
+!
+! Option 1 - Americas
+!
+ip access-list extended al_att_data_forward_class2
+ remark /**************************************************
+ remark QoS class 2 - data forward classification policy
+ remark **************************************************/
+ permit tcp any 9.63.238.0 0.0.0.255 range 3200 3399  ! Blue Harmony SAP
+ permit tcp any 9.63.238.0 0.0.0.255 range 3600 3699  ! Blue Harmony SAP
+ permit tcp any 9.63.240.0 0.0.0.255 range 3200 3399  ! Blue Harmony SAP
+ permit tcp any 9.63.240.0 0.0.0.255 range 3600 3699  ! Blue Harmony SAP
+ permit tcp any 9.63.243.0 0.0.0.127 range 3200 3399  ! Blue Harmony SAP
+ permit tcp any 9.63.243.0 0.0.0.127 range 3600 3699  ! Blue Harmony SAP
+ permit tcp any 9.63.67.0 0.0.0.255 range 3200 3399   ! SAP, Americas
+ permit tcp any 9.63.76.0 0.0.0.255 range 3200 3399   ! SAP, Americas
+ permit tcp any 9.63.67.0 0.0.0.255 range 8035 8070   ! SAP, Americas
+ permit tcp any 9.63.76.0 0.0.0.255 range 8035 8070   ! SAP, Americas
+ permit tcp any host 9.57.57.43 eq 443                ! CRM, Americas
+ permit tcp any host 9.57.57.43 eq 50443              ! CRM, Americas
+ permit tcp any 9.63.238.0 0.0.0.255 eq www           ! Blue Harmony
+ permit tcp any 9.63.240.0 0.0.0.255 eq www           ! Blue Harmony
+ permit tcp any 9.63.241.0 0.0.0.63 eq www            ! Blue Harmony
+ permit tcp any 9.63.243.0 0.0.0.255 eq www           ! Blue Harmony
+ permit tcp any 9.63.238.0 0.0.0.255 eq 443           ! Blue Harmony
+ permit tcp any 9.63.240.0 0.0.0.255 eq 443           ! Blue Harmony
+ permit tcp any 9.63.241.0 0.0.0.63 eq 443            ! Blue Harmony
+ permit tcp any 9.63.243.0 0.0.0.255 eq 443           ! Blue Harmony
+ permit tcp any host 9.57.61.96 eq www                ! Blue Harmony SSL proxy
+ permit tcp any host 9.149.4.32 eq www                ! Blue Harmony SSL proxy
+ permit tcp any host 9.57.61.96 eq 443                ! Blue Harmony SSL proxy
+ permit tcp any host 9.149.4.32 eq 443                ! Blue Harmony SSL proxy
+ permit udp any host 9.190.68.90 range 2326 2365      ! VRI Gateway
+ permit tcp any 9.0.128.0 0.0.31.255 eq domain        ! Infoblox DDNS Updates and transfers
+ permit udp any any eq domain
+ permit udp any any eq bootps
+ permit udp any any eq bootpc
+ permit tcp any any eq 389                            ! LDAP
+ permit tcp any any eq 636                            ! LDAPS
+ permit udp any any eq 1812                           ! RADIUS authentication
+ permit udp any any eq 1813                           ! RADIUS accounting
+ permit udp any any range 12000 12002                 ! EE for SNA
+ permit tcp any any eq telnet
+ permit tcp any any eq tacacs
+ permit udp any any eq tacacs
+ deny   ip any any
+ip access-list extended al_att_data_return_class2_server
+ remark /**********************************************
+ remark QoS class 2 - return classification policy
+ remark **********************************************/
+ permit tcp 9.63.238.0 0.0.0.255 range 3200 3399 any  ! Blue Harmony SAP
+ permit tcp 9.63.238.0 0.0.0.255 range 3600 3699 any  ! Blue Harmony SAP
+ permit tcp 9.63.240.0 0.0.0.255 range 3200 3399 any  ! Blue Harmony SAP
+ permit tcp 9.63.240.0 0.0.0.255 range 3600 3699 any  ! Blue Harmony SAP
+ permit tcp 9.63.243.0 0.0.0.127 range 3200 3399 any  ! Blue Harmony SAP
+ permit tcp 9.63.243.0 0.0.0.127 range 3600 3699 any  ! Blue Harmony SAP
+ permit tcp 9.63.67.0 0.0.0.255 range 3200 3399 any   ! SAP, Americas
+ permit tcp 9.63.76.0 0.0.0.255 range 3200 3399 any   ! SAP, Americas
+ permit tcp 9.63.67.0 0.0.0.255 range 8035 8070 any   ! SAP, Americas
+ permit tcp 9.63.76.0 0.0.0.255 range 8035 8070 any   ! SAP, Americas
+ permit tcp host 9.57.57.43 eq 443 any                ! CRM, Americas
+ permit tcp host 9.57.57.43 eq 50443 any              ! CRM, Americas
+ permit tcp 9.63.238.0 0.0.0.255 eq www any           ! Blue Harmony
+ permit tcp 9.63.240.0 0.0.0.255 eq www any           ! Blue Harmony
+ permit tcp 9.63.241.0 0.0.0.63 eq www any            ! Blue Harmony
+ permit tcp 9.63.243.0 0.0.0.255 eq www any           ! Blue Harmony
+ permit tcp 9.63.238.0 0.0.0.255 eq 443 any           ! Blue Harmony
+ permit tcp 9.63.240.0 0.0.0.255 eq 443 any           ! Blue Harmony
+ permit tcp 9.63.241.0 0.0.0.63 eq 443 any            ! Blue Harmony
+ permit tcp 9.63.243.0 0.0.0.255 eq 443 any           ! Blue Harmony
+ permit tcp host 9.57.61.96 eq www any                ! Blue Harmony SSL proxy
+ permit tcp host 9.149.4.32 eq www any                ! Blue Harmony SSL proxy
+ permit tcp host 9.57.61.96 eq 443 any                ! Blue Harmony SSL proxy
+ permit tcp host 9.149.4.32 eq 443 any                ! Blue Harmony SSL proxy
+ permit udp host 9.190.68.90 range 2326 2365 any      ! VRI Gateway
+ permit tcp 9.0.128.0 0.0.31.255 eq domain any        ! Infoblox DDNS Updates and transfers
+ permit udp any eq domain any
+ permit udp any eq bootps any
+ permit udp any eq bootpc any
+ permit tcp any eq 389 any                            ! LDAP
+ permit tcp any eq 636 any                            ! LDAPS
+ permit udp any eq 1812 any                           ! RADIUS authentication
+ permit udp any eq 1813 any                           ! RADIUS accounting
+ permit udp any range 12000 12002 any                 ! EE for SNA
+ permit tcp any eq telnet any
+ permit tcp any eq tacacs any
+ permit udp any eq tacacs any
+ deny   ip any any
+!
+! Option 2 - EMEA
+!
+ip access-list extended al_att_data_forward_class2
+ remark /**************************************************
+ remark QoS class 2 - data forward classification policy
+ remark **************************************************/
+ remark /*****  EMEA specific SAP, CRM server    *****/
+ permit tcp any any range 3200 3399                   ! SAP, EMEA
+ permit tcp any any range 8035 8070                   ! SAP, EMEA
+ permit tcp any host 9.149.5.235 eq 443               ! CRM, EMEA
+ permit tcp any host 9.149.5.235 eq 50443             ! CRM, EMEA
+ permit tcp any host 9.149.5.190 eq 443               ! CRM, EMEA
+ remark /*****  End EMEA specific SAP, CRM server  *****/
+ permit tcp any 9.63.238.0 0.0.0.255 range 3600 3699  ! Blue Harmony SAP
+ permit tcp any 9.63.240.0 0.0.0.255 range 3600 3699  ! Blue Harmony SAP
+ permit tcp any 9.63.243.0 0.0.0.127 range 3600 3699  ! Blue Harmony SAP
+ permit tcp any 9.63.67.0 0.0.0.255 range 8035 8070   ! SAP, Americas
+ permit tcp any 9.63.76.0 0.0.0.255 range 8035 8070   ! SAP, Americas
+ permit tcp any host 9.57.57.43 eq 443                ! CRM, Americas
+ permit tcp any host 9.57.57.43 eq 50443              ! CRM, Americas
+ permit tcp any 9.63.238.0 0.0.0.255 eq www           ! Blue Harmony
+ permit tcp any 9.63.240.0 0.0.0.255 eq www           ! Blue Harmony
+ permit tcp any 9.63.241.0 0.0.0.63 eq www            ! Blue Harmony
+ permit tcp any 9.63.243.0 0.0.0.255 eq www           ! Blue Harmony
+ permit tcp any 9.63.238.0 0.0.0.255 eq 443           ! Blue Harmony
+ permit tcp any 9.63.240.0 0.0.0.255 eq 443           ! Blue Harmony
+ permit tcp any 9.63.241.0 0.0.0.63 eq 443            ! Blue Harmony
+ permit tcp any 9.63.243.0 0.0.0.255 eq 443           ! Blue Harmony
+ permit tcp any host 9.57.61.96 eq www                ! Blue Harmony SSL proxy
+ permit tcp any host 9.149.4.32 eq www                ! Blue Harmony SSL proxy
+ permit tcp any host 9.57.61.96 eq 443                ! Blue Harmony SSL proxy
+ permit tcp any host 9.149.4.32 eq 443                ! Blue Harmony SSL proxy
+ permit udp any host 9.190.68.90 range 2326 2365      ! VRI Gateway
+ permit tcp any 9.0.128.0 0.0.31.255 eq domain        ! Infoblox DDNS Updates and transfers
+ permit udp any any eq domain
+ permit udp any any eq bootps
+ permit udp any any eq bootpc
+ permit tcp any any eq 389                            ! LDAP
+ permit tcp any any eq 636                            ! LDAPS
+ permit udp any any eq 1812                           ! RADIUS authentication
+ permit udp any any eq 1813                           ! RADIUS accounting
+ permit udp any any range 12000 12002                 ! EE for SNA
+ permit tcp any any eq telnet
+ permit tcp any any eq tacacs
+ permit udp any any eq tacacs
+ deny   ip any any
+ip access-list extended al_att_data_return_class2_server
+ remark /**********************************************
+ remark QoS class 2 - return classification policy
+ remark **********************************************/
+ remark /*****  EMEA specific SAP, CRM server    *****/
+ permit tcp any range 3200 3399 any                   ! SAP, EMEA
+ permit tcp any range 8035 8070 any                   ! SAP, EMEA
+ permit tcp host 9.149.5.235 eq 443 any               ! CRM, EMEA
+ permit tcp host 9.149.5.235 eq 50443 any             ! CRM, EMEA
+ permit tcp host 9.149.5.190 eq 443 any               ! CRM, EMEA
+ remark /*****  End EMEA specific SAP, CRM server  *****/
+ permit tcp 9.63.238.0 0.0.0.255 range 3600 3699 any  ! Blue Harmony SAP
+ permit tcp 9.63.240.0 0.0.0.255 range 3600 3699 any  ! Blue Harmony SAP
+ permit tcp 9.63.243.0 0.0.0.127 range 3600 3699 any  ! Blue Harmony SAP
+ permit tcp 9.63.67.0 0.0.0.255 range 3200 3399 any   ! SAP, Americas
+ permit tcp 9.63.76.0 0.0.0.255 range 3200 3399 any   ! SAP, Americas
+ permit tcp 9.63.67.0 0.0.0.255 range 8035 8070 any   ! SAP, Americas
+ permit tcp 9.63.76.0 0.0.0.255 range 8035 8070 any   ! SAP, Americas
+ permit tcp host 9.57.57.43 eq 443 any                ! CRM, Americas
+ permit tcp host 9.57.57.43 eq 50443 any              ! CRM, Americas
+ permit tcp 9.63.238.0 0.0.0.255 eq www any           ! Blue Harmony
+ permit tcp 9.63.240.0 0.0.0.255 eq www any           ! Blue Harmony
+ permit tcp 9.63.241.0 0.0.0.63 eq www any            ! Blue Harmony
+ permit tcp 9.63.243.0 0.0.0.255 eq www any           ! Blue Harmony
+ permit tcp 9.63.238.0 0.0.0.255 eq 443 any           ! Blue Harmony
+ permit tcp 9.63.240.0 0.0.0.255 eq 443 any           ! Blue Harmony
+ permit tcp 9.63.241.0 0.0.0.63 eq 443 any            ! Blue Harmony
+ permit tcp 9.63.243.0 0.0.0.255 eq 443 any           ! Blue Harmony
+ permit tcp host 9.57.61.96 eq www any                ! Blue Harmony SSL proxy
+ permit tcp host 9.149.4.32 eq www any                ! Blue Harmony SSL proxy
+ permit tcp host 9.57.61.96 eq 443 any                ! Blue Harmony SSL proxy
+ permit tcp host 9.149.4.32 eq 443 any                ! Blue Harmony SSL proxy
+ permit udp host 9.190.68.90 range 2326 2365 any      ! VRI Gateway
+ permit tcp 9.0.128.0 0.0.31.255 eq domain any        ! Infoblox DDNS Updates and transfers
+ permit udp any eq domain any
+ permit udp any eq bootps any
+ permit udp any eq bootpc any
+ permit tcp any eq 389 any                            ! LDAP
+ permit tcp any eq 636 any                            ! LDAPS
+ permit udp any eq 1812 any                           ! RADIUS authentication
+ permit udp any eq 1813 any                           ! RADIUS accounting
+ permit udp any range 12000 12002 any                 ! EE for SNA
+ permit tcp any eq telnet any
+ permit tcp any eq tacacs any
+ permit udp any eq tacacs any
+ deny   ip any any
+!
+! End of class 2 forward and server return ACL options
+!
+ip access-list extended al_att_data_return_class2_user
+ remark /************************************************
+ remark QoS class 2 - return classification policy
+ remark for services that might exist on a User switch
+ remark ************************************************/
+ permit tcp any eq telnet any
+ deny   ip any any
+ip access-list extended al_att_forward_class3
+ remark /**********************************************
+ remark QoS class 3 - forward classification policy
+ remark **********************************************/
+ permit tcp 9.0.0.0 0.255.255.255 9.0.0.0 0.255.255.255 eq www
+ permit tcp 9.0.0.0 0.255.255.255 9.0.0.0 0.255.255.255 eq 443           ! Secure HTTP/CRM
+ permit tcp any any eq 647                                               ! DHCP failover
+ permit tcp any any eq 1352                                              ! Lotus Notes
+ permit tcp any any eq 1494                                              ! Citrix
+ permit tcp any any eq 2598                                              ! Citrix
+ permit tcp any any eq 7911                                              ! DHCP failover
+ permit tcp host 9.141.144.36 range 44700 44900 host 9.7.67.49 eq 6874   ! Mexico SAP Print
+ permit tcp host 9.141.142.26 range 44700 44900 host 9.7.67.49 eq 6874   ! Mexico SAP Print
+ permit tcp host 9.141.147.211 range 44700 44900 host 9.7.67.49 eq 6874  ! Mexico SAP Print
+ permit tcp host 9.141.143.246 range 44700 44900 host 9.7.67.49 eq 6874  ! Mexico SAP Print
+ deny   udp any any range 33001 33100                                    ! Aspera file transfer forward
+ deny   udp any range 33001 33100 any                                    ! Aspera file transfer return
+ permit udp any any                                                      ! AFS/DFS, NTP, other UDP
+ permit udp any any fragments                                            ! UDP fragments
+ deny   ip any any
+ip access-list extended al_att_ipsla_class1
+ remark /**********************************************
+ remark QoS class 1 - classification policy - IP SLA
+ remark **********************************************/
+ remark /---------------------------------------------
+ remark IP SLA specific classification
+ remark ----------------------------------------------/
+ remark IP SLA Class 1 UDP probes - agent
+ permit udp any any range 17100 17199
+ remark -
+ remark IP SLA Class 1 UDP probes - responder
+ permit udp any range 17100 17199 any
+ remark /--------------------------------------------
+ remark End IP SLA specific classification
+ remark ---------------------------------------------/
+ deny   ip any any
+ip access-list extended al_att_ipsla_class2
+ remark /**********************************************
+ remark QoS class 2 - classification policy - IP SLA
+ remark **********************************************/
+ remark /---------------------------------------------
+ remark IP SLA specific classification
+ remark ----------------------------------------------/
+ remark IP SLA Class 2 UDP probes - agent
+ permit udp any any range 17200 17299
+ remark -
+ remark IP SLA Class 2 UDP probes - responder
+ permit udp any range 17200 17299 any
+ remark -
+ remark IP SLA control
+ permit udp any any eq 1967
+ permit udp any eq 1967 any
+ remark /--------------------------------------------
+ remark End IP SLA specific classification
+ remark ---------------------------------------------/
+ permit udp any any eq domain
+ permit udp any any eq bootps
+ permit udp any any eq bootpc
+ permit tcp any any eq 389                                               ! LDAP
+ permit tcp any any eq 636                                               ! LDAPS
+ permit tcp any any eq telnet                                            ! outbound telnet sessions
+ permit tcp any eq telnet any                                            ! inbound telnet sessions
+ deny   ip any any
+ip access-list extended al_att_ipsla_class3
+ remark /**********************************************
+ remark QoS class 3 - classification policy - IP SLA
+ remark **********************************************/
+ remark /---------------------------------------------
+ remark IP SLA specific classification
+ remark ----------------------------------------------/
+ remark IP SLA Class 3 UDP probes - agent
+ permit udp any any range 17300 17399
+ remark -
+ remark IP SLA Class 3 UDP probes - responder
+ permit udp any range 17300 17399 any
+ remark -
+ remark Exclude IP SLA Class 4 UDP probes from Class 3
+ deny   udp any any range 17400 17499
+ deny   udp any range 17400 17499 any
+ remark /--------------------------------------------
+ remark End IP SLA specific classification
+ remark ---------------------------------------------/
+ permit tcp 9.0.0.0 0.255.255.255 9.0.0.0 0.255.255.255 eq www
+ permit udp any any eq ntp
+ permit tcp 9.0.0.0 0.255.255.255 9.0.0.0 0.255.255.255 eq 443           ! Secure HTTP
+ permit tcp any any eq 1352                                              ! Lotus Notes
+ permit tcp any any eq 1494                                              ! Citrix
+ permit udp any any                                                      ! AFS/DFS + SNMP + SNMP traps
+ deny   ip any any
+ip access-list extended al_att_mgmt_forward_class2
+ remark /***********************************************************
+ remark QoS class 2 - managed device forward classification policy
+ remark ***********************************************************/
+ permit udp any any eq domain
+ permit udp any any eq 1812                                              ! RADIUS authentication
+ permit udp any any eq 1813                                              ! RADIUS accounting
+ permit tcp any any eq 22                                                ! SSH
+ permit tcp any any eq telnet
+ permit tcp any any eq tacacs
+ permit udp any any eq tacacs
+ deny   ip any any
+ip access-list extended al_att_mgmt_forward_class3
+ remark /***********************************************************
+ remark QoS class 3 - managed device forward classification policy
+ remark ***********************************************************/
+ permit tcp 9.0.0.0 0.255.255.255 9.0.0.0 0.255.255.255 eq www
+ permit tcp 9.0.0.0 0.255.255.255 9.0.0.0 0.255.255.255 eq 443           ! Secure HTTP
+ permit udp any any
+ permit udp any any fragments
+ deny   ip any any
+ip access-list extended al_att_mgmt_return_class2
+ remark /***********************************************************
+ remark QoS class 2 - managed device return classification policy
+ remark ***********************************************************/
+ permit tcp any eq telnet any
+ deny   ip any any
+ip access-list extended al_att_mgmt_return_class3
+ remark /***********************************************************
+ remark QoS class 3 - managed device return classification policy
+ remark ***********************************************************/
+ permit tcp 9.0.0.0 0.255.255.255 eq www 9.0.0.0 0.255.255.255
+ permit tcp 9.0.0.0 0.255.255.255 eq 443 9.0.0.0 0.255.255.255           ! Secure HTTP
+ permit udp any any
+ permit udp any any fragments
+ deny   ip any any
+ip access-list extended al_att_return_class3
+ remark /**********************************************
+ remark QoS class 3 - return classification policy
+ remark **********************************************/
+ permit tcp 9.0.0.0 0.255.255.255 eq www 9.0.0.0 0.255.255.255
+ permit tcp 9.0.0.0 0.255.255.255 eq 443 9.0.0.0 0.255.255.255           ! Secure HTTP/CRM
+ permit tcp any eq 647 any                                               ! DHCP failover
+ permit tcp any eq 1352 any                                              ! Lotus Notes
+ permit tcp any eq 1494 any                                              ! Citrix
+ permit tcp any eq 2598 any                                              ! Citrix
+ permit tcp any eq 7911 any                                              ! DHCP failover
+ permit tcp host 9.7.67.49 eq 6874 host 9.141.144.36 range 44700 44900   ! Mexico SAP Print
+ permit tcp host 9.7.67.49 eq 6874 host 9.141.142.26 range 44700 44900   ! Mexico SAP Print
+ permit tcp host 9.7.67.49 eq 6874 host 9.141.147.211 range 44700 44900  ! Mexico SAP Print
+ permit tcp host 9.7.67.49 eq 6874 host 9.141.143.246 range 44700 44900  ! Mexico SAP Print
+ deny   udp any any range 33001 33100                                    ! Aspera file transfer forward
+ deny   udp any range 33001 33100 any                                    ! Aspera file transfer return
+ permit udp any any                                                      ! AFS/DFS, NTP, other UDP
+ permit udp any any fragments                                            ! UDP fragments
+ deny   ip any any
+ip access-list extended al_att_voip_forward_class2
+ remark /***************************************************
+ remark QoS class 2 - voice forward classification policy
+ remark ***************************************************/
+ !
+ ! Repeat the following entries for each voice device host address present on this switch, if any
+ !   Voice device is server or gateway including devices utilizing Avaya H323 IP trunks
+ !
+ permit tcp host 9.{{ b.c.voice device }} any range 2000 2002                    ! SCCP
+ permit tcp host 9.{{ b.c.voice device }} any eq 1720                            ! H323
+ permit udp host 9.{{ b.c.voice device }} any eq 2427                            ! H323
+ permit tcp host 9.{{ b.c.voice device }} any eq 2428                            ! H323
+ permit tcp host 9.{{ b.c.voice device }} any range 11000 11999                  ! H323
+ permit udp host 9.{{ b.c.voice device }} any eq 5060                            ! SIP
+ permit tcp host 9.{{ b.c.voice device }} any eq 5060                            ! SIP
+ permit udp host 9.{{ b.c.voice device }} any eq 1719                            ! H232
+ permit tcp host 9.{{ b.c.voice device }} any eq 1719                            ! H232
+ permit tcp host 9.{{ b.c.voice device }} any eq 5010                            ! IPSI
+ permit tcp host 9.{{ b.c.voice device }} any eq 1039                            ! H248
+ permit tcp host 9.{{ b.c.voice device }} any eq 2945                            ! H248
+ permit tcp host 9.{{ b.c.voice device }} any eq 5011                            ! H323
+ !
+ ! Repeat the following entries for each voice address range allocated to this switch, if any
+ !   Voice address range is comprised of voice servers and gateways
+ !
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any range 2000 2002    ! SCCP
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 1720            ! H323
+ permit udp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 2427            ! H323
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 2428            ! H323
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any range 11000 11999  ! H323
+ permit udp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 5060            ! SIP
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 5060            ! SIP
+ permit udp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 1719            ! H232
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 1719            ! H232
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 5010            ! IPSI
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 1039            ! H248
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 2945            ! H248
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} any eq 5011            ! H323
+ !
+ ! Repeat the following entries for each remote subscriber voice server present on this switch, if any
+ !
+ permit tcp host 9.{{ b.c.remote subscriber server }} any range 1500 1501        ! Dbase connection
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 1515                ! Dbase node replication
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 2551                ! IntraCluster Active/Backup Polling
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 2552                ! Subscriber Dbase Change Notification
+ permit tcp host 9.{{ b.c.remote subscriber server }} any range 2555 2556        ! Real Time Info Services Dbase
+ permit udp host 9.{{ b.c.remote subscriber server }} any eq 3000                ! CUCM Receive Change Notification
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 4040                ! DRF Master Agent
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 4343                ! DRF Local Agent
+ permit tcp host 9.{{ b.c.remote subscriber server }} any range 5001 5010        ! SOAP Monitor
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 5555                ! License Manager Requests
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 6970                ! Alternate TFTP
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 7070                ! Certificate Manager Service
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 7727                ! Application Dbase Change Notification
+ permit tcp host 9.{{ b.c.remote subscriber server }} any range 8001 8004        ! IntraCluster Comms Service
+ permit tcp host 9.{{ b.c.remote subscriber server }} any eq 8009                ! Tomcat Requests
+ permit udp host 9.{{ b.c.remote subscriber server }} any eq 8500                ! IntraCluster Ipsec Cluster Manager
+ permit tcp host 9.{{ b.c.remote subscriber server }} any range 8888 8889        ! RIS Service Manager Request
+ !
+ ! Repeat the following entries for each voice server address range utilizing CUCM Split Cluster, if any
+ !
+ permit tcp host 9.{{ b.c.remote split cluster server }} any range 1500 1501     ! Dbase connection
+ permit tcp host 9.{{ b.c.remote split cluster server }} any eq 2551             ! IntraCluster Communication
+ permit tcp host 9.{{ b.c.remote split cluster server }} any range 2555 2556     ! Real Time Info Services Dbase
+ permit tcp host 9.{{ b.c.remote split cluster server }} any range 8001 8005     ! IntraCluster Comms Service
+ permit tcp host 9.{{ b.c.remote split cluster server }} any eq 9004             ! IntraCluster Communication
+ !
+ ! Repeat the following entries for each Hicom server present on this switch, if any
+ !
+ permit tcp host 9.{{ b.c.Hicom server }} any eq 4060
+ permit tcp host 9.{{ b.c.Hicom server }} any range 30000 30199
+ !
+ ! Repeat the following entry for each voice device present utilizing Avaya H323 IP trunks, if any
+ !
+ permit tcp host 9.{{ b.c.voice device }} any range 5075 5078                    ! Avaya H323 IP Trunks
+ !
+ deny   ip any any
+ip access-list extended al_att_voip_return_class2
+ remark /**********************************************
+ remark QoS class 2 - return classification policy
+ remark **********************************************/
+ !
+ ! Repeat the following entries for each voice device host address present on this switch, if any
+ !   Voice device is server or gateway including devices utilizing Avaya H323 IP trunks
+ !
+ permit tcp host 9.{{ b.c.voice device }} range 2000 2002 any                    ! SCCP
+ permit tcp host 9.{{ b.c.voice device }} eq 1720 any                            ! H323
+ permit udp host 9.{{ b.c.voice device }} eq 2427 any                            ! H323
+ permit tcp host 9.{{ b.c.voice device }} eq 2428 any                            ! H323
+ permit tcp host 9.{{ b.c.voice device }} range 11000 11999 any                  ! H323
+ permit udp host 9.{{ b.c.voice device }} eq 5060 any                            ! SIP
+ permit tcp host 9.{{ b.c.voice device }} eq 5060 any                            ! SIP
+ permit udp host 9.{{ b.c.voice device }} eq 1719 any                            ! H232
+ permit tcp host 9.{{ b.c.voice device }} eq 1719 any                            ! H232
+ permit tcp host 9.{{ b.c.voice device }} eq 5010 any                            ! IPSI
+ permit tcp host 9.{{ b.c.voice device }} eq 1039 any                            ! H248
+ permit tcp host 9.{{ b.c.voice device }} eq 2945 any                            ! H248
+ permit tcp host 9.{{ b.c.voice device }} eq 5011 any                            ! H323
+ !
+ ! Repeat the following entries for each voice address range allocated to this switch, if any
+ !   Voice address range is comprised of voice servers and gateways
+ !
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} range 2000 2002 any    ! SCCP
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 1720 any            ! H323
+ permit udp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 2427 any            ! H323
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 2428 any            ! H323
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} range 11000 11999 any  ! H323
+ permit udp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 5060 any            ! SIP
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 5060 any            ! SIP
+ permit udp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 1719 any            ! H232
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 1719 any            ! H232
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 5010 any            ! IPSI
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 1039 any            ! H248
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 2945 any            ! H248
+ permit tcp 9.{{ b.c.voice range }} 0.0.0.{{ wildcard mask }} eq 5011 any            ! H323
+ !
+ ! Repeat the following entries for each remote subscriber voice server present on this switch, if any
+ !
+ permit tcp host 9.{{ b.c.remote subscriber server }} range 1500 1501 any        ! Dbase connection
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 1515 any                ! Dbase node replication
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 2551 any                ! IntraCluster Active/Backup Polling
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 2552 any                ! Subscriber Dbase Change Notification
+ permit tcp host 9.{{ b.c.remote subscriber server }} range 2555 2556 any        ! Real Time Info Services Dbase
+ permit udp host 9.{{ b.c.remote subscriber server }} eq 3000 any                ! CUCM Receive Change Notification
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 4040 any                ! DRF Master Agent
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 4343 any                ! DRF Local Agent
+ permit tcp host 9.{{ b.c.remote subscriber server }} range 5001 5010 any        ! SOAP Monitor
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 5555 any                ! License Manager Requests
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 6970 any                ! Alternate TFTP
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 7070 any                ! Certificate Manager Service
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 7727 any                ! Application Dbase Change Notification
+ permit tcp host 9.{{ b.c.remote subscriber server }} range 8001 8004 any        ! IntraCluster Comms Service
+ permit tcp host 9.{{ b.c.remote subscriber server }} eq 8009 any                ! Tomcat Requests
+ permit udp host 9.{{ b.c.remote subscriber server }} eq 8500 any                ! IntraCluster Ipsec Cluster Manager
+ permit tcp host 9.{{ b.c.remote subscriber server }} range 8888 8889 any        ! RIS Service Manager Request
+ !
+ ! Repeat the following entries for each voice server address range utilizing CUCM Split Cluster, if any
+ !
+ permit tcp host 9.{{ b.c.remote split cluster server }} range 1500 1501 any     ! Dbase connection
+ permit tcp host 9.{{ b.c.remote split cluster server }} eq 2551 any             ! IntraCluster Communication
+ permit tcp host 9.{{ b.c.remote split cluster server }} range 2555 2556 any     ! Real Time Info Services Dbase
+ permit tcp host 9.{{ b.c.remote split cluster server }} range 8001 8005 any     ! IntraCluster Comms Service
+ permit tcp host 9.{{ b.c.remote split cluster server }} eq 9004 any             ! IntraCluster Communication
+ !
+ ! Repeat the following entries for each Hicom server present on this switch, if any
+ !
+ permit tcp host 9.{{ b.c.Hicom server }} eq 4060 any
+ permit tcp host 9.{{ b.c.Hicom server }} range 30000 30199 any
+ !
+ ! Repeat the following entry for each voice device present utilizing Avaya H323 IP trunks, if any
+ !
+ permit tcp host 9.{{ b.c.voice device }} range 5075 5078 any                    ! Avaya H323 IP Trunks
+ !
+ deny   ip any any
+!
+logging history notifications
+logging trap notifications
+logging source-interface Vlan{{ 1900+i }}
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   All devices - iGEMS DMS servers (2)
+!
+logging host {{ syslog server IP address from spreadsheet }}
+!
+access-list 79 remark /**********************************************
+access-list 79 remark NTP authorized servers
+access-list 79 remark **********************************************/
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   All devices - iGEMS DMS servers (2)
+!
+access-list 79 permit {{ NTP server IP address from spreadsheet }}
+!
+access-list 79 deny   any
+!
+! Apply the following access-list if legacy IBM SNMP server RO ranges/hosts specified in spreadsheet
+!
+access-list 80 remark /**********************************************
+access-list 80 remark SNMP RO authorized servers
+access-list 80 remark **********************************************/
+!
+! Repeat one of the following commands for each address range or address specified in spreadsheet
+!   Legacy IBM SNMP server RO ranges/hosts
+!
+access-list 80 permit {{ SNMP server IP address range from spreadsheet }} 0.0.0.{{ mask from spreadsheet }}
+access-list 80 permit {{ SNMP server IP address from spreadsheet }}
+!
+access-list 80 deny   any
+!
+access-list 93 remark /**********************************************
+access-list 93 remark AT&T SNMP RW authorized servers
+access-list 93 remark **********************************************/
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   iGEMS DMS server RW ranges
+!
+access-list 93 permit {{ SNMP server IP address range from spreadsheet }} 0.0.0.{{ mask from spreadsheet }}
+!
+access-list 93 deny   any
+access-list 95 remark /**********************************************
+access-list 95 remark AT&T SNMP RO authorized servers
+access-list 95 remark **********************************************/
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   iGEMS DMS server RO ranges
+!
+access-list 95 permit {{ SNMP server IP address range from spreadsheet }} 0.0.0.{{ mask from spreadsheet }}
+!
+access-list 95 deny   any
+!
+! Apply the following command if access-list 80 defined
+!
+snmp-server community {{ assigned site RO string }} RO 80
+!
+snmp-server community [AT&T assigned RW string }} RW 93
+snmp-server community [AT&T assigned RO string }} RO 95
+snmp-server trap timeout 180
+snmp-server trap-source Vlan[1900+i }}
+snmp-server queue-length 100
+snmp-server location [region }}/[country }}/[reso }}/vSA/[UTCoffset }}/[building-floor }}/[closet }}/[rack }}</[SNMP local description }}>
+snmp-server ip dscp 18
+snmp-server contact [ManageNow queue }}/[Contact Info }}/[City }}/[WAN Tier }}/[site type:vSC|eCD|eND }}
+snmp-server system-shutdown
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps envmon fan shutdown supply temperature status
+snmp-server enable traps fru-ctrl
+snmp-server enable traps entity
+snmp-server enable traps config
+!
+! Repeat one of the following commands for each server address specified in spreadsheet, as appropriate
+!   All devices - iGEMS DMS and INCM servers
+!
+snmp-server host [SNMP server IP address from spreadsheet }} version 2c [assigned site RO string }}
+snmp-server host [INCM server IP address from spreadsheet }} version 2c [assigned site RO string }}  config
+!
+snmp ifmib ifindex persist
+!
+!
+!
+no vstack
+!
+! Apply the following banner if device has an exception
+!
+banner exec ^ *** Cisco 3650-[24PD|48FD }} / 16.1.0 / vSA-3650d.txt / EXCEPTION *** ^
+!
+! Apply the following banner if device does NOT have an exception
+!
+banner exec ^ *** Cisco 3650-[24PD|48FD }} / 16.1.0 / vSA-3650d.txt *** ^
+!
+banner login ^
+***********************************************************************
+*  GTAC                                                               *
+***********************************************************************
+*  Warning Notice:                                                    *
+*    This system is restricted solely to AT&T authorized users for    *
+*    legitimate business purposes only. The actual or attempted       *
+*    unauthorized access, use, or modification of this system is      *
+*    strictly prohibited by AT&T. Unauthorized users are subject to   *
+*    Company disciplinary proceedings and/or criminal and civil       *
+*    penalties under state, federal, or other applicable domestic and *
+*    foreign laws. The use of this system may be monitored and        *
+*    recorded for administrative and security reasons. Anyone         *
+*    accessing this system expressly consents to such monitoring and  *
+*    is advised that if monitoring reveals possible evidence of       *
+*    criminal activity, AT&T may provide the evidence of such         *
+*    activity to law enforcement officials. All users must comply     *
+*    with AT&T company policies regarding the protection of AT&T      *
+*    information assets.                                              *
+***********************************************************************
+^
+!
+line con 0
+ session-timeout 15 
+ exec-timeout 15 0
+ logging synchronous
+ stopbits 1
+!
+! AUX port is reserved and is not used for external connectivity
+!
+line aux 0
+ session-timeout 15 
+ exec-timeout 15 0
+ logging synchronous
+ stopbits 1
+line vty 0 4
+ session-timeout 15 
+ access-class al_vty_access_aspr in
+ exec-timeout 15 0
+ logging synchronous
+ transport input ssh
+line vty 5 15
+ session-timeout 15 
+ access-class al_vty_access_aspr in
+ exec-timeout 15 0
+ logging synchronous
+ transport input ssh
+!
+! A SPAN port may be used for copying some switched traffic to an externally-
+! connected protocol analyzer. This is a sample only. The actual parameters will vary.
+!
+! SPAN source options - source interface
+!
+! monitor session 1 source interface [port to SPAN }}
+!
+! SPAN source options - VLAN source
+!
+! monitor session 1 source vlan [VLAN number }}
+!
+! End of SPAN source options
+!
+monitor session 1 destination interface Gi1/0/[24|48 }}
+ntp source Vlan[1900+i }}
+ntp access-group peer 79
+!
+! Repeat the following command for each server address specified in spreadsheet
+!   All devices - iGEMS DMS servers (2)
+!
+ntp server [NTP server IP address from spreadsheet }}
+!
+wsma agent exec
+ profile httplistener
+ profile httpslistener
+!
+wsma agent config
+ profile httplistener
+ profile httpslistener
+!
+wsma agent filesys
+ profile httplistener
+ profile httpslistener
+!
+wsma agent notify
+ profile httplistener
+ profile httpslistener
+!
+!
+wsma profile listener httplistener
+ transport http
+!
+wsma profile listener httpslistener
+ transport https
+mac address-table aging-time 480
+!
+ap group default-group
+end
