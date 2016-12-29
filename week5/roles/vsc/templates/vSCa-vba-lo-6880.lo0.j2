@@ -1,0 +1,26 @@
+!
+version 15.2
+no service pad
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+service password-encryption
+service counters max age 10
+no service dhcp
+!
+hostname {{item.site_prefix}}-vsc-a
+!
+boot-start-marker
+boot system bootdisk:c6880x-adventerprisek9-mz.SPA.152-1.SY1a.bin
+boot system bootdisk:
+boot-end-marker
+!
+!
+!
+!
+interface Loopback0
+ description {{item.site_prefix}}/vSCa/lo0/global</[local description]>
+ ip address 9.{{item.b1}}.{{item.x1}}.5 255.255.255.255
+ load-interval 60
+ no shutdown
