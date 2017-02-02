@@ -1,4 +1,5 @@
 - name: Generate configuration file
+  connection: local
   hosts: local
 
   roles:
