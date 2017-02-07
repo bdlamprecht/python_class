@@ -6,7 +6,7 @@ import pwd
 from getpass import getuser
 from docxtpl import DocxTemplate
 
-doc = DocxTemplate("test_env.docx.j2")
+doc = DocxTemplate("test_env.tpl.docx")
 output = { 'test_name' : 'Test Envrionment',
            'tester' : "{} ({})".format(pwd.getpwuid(os.getuid())[4],
                                      pwd.getpwuid(os.getuid())[0]),
