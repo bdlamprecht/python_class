@@ -17,8 +17,8 @@ def creator(args):
   #print("x is {}, and y is {}".format(x,y))
 
   for i in range(x,y):
-      output['test{}_result'.format(i+1)]='result {}'.format(i+1)
-      output['test{}_comment'.format(i+1)]='comment {}'.format(i+1)
+      output['test{}_result'.format(i+1)]='Test {} result'.format(i+1)
+      output['test{}_comment'.format(i+1)]='Test {} comment'.format(i+1)
       #print("test{}_result".format(i+1))
       #print("test{}_comment".format(i+1))
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
   p = ArgumentParser("Generate a docx file using a docxtpl formatted jinja2 template")
   p.add_argument('--input',  help='An input template file with embedded Jinja2 variables.', default='input.tpl.docx')
   p.add_argument('--output', help='The generated docx ouput file.', default='output.docx')
-  p.add_argument('--name',   help='The name of the generatored test script', required=True)
+  p.add_argument('--name',   help='The name of the generatored test script', default='Test')
   args = p.parse_args()
 
   creator(args)
