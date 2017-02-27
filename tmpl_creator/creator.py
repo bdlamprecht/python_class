@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os,pwd,time
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, R
 
 def main(args):
 
@@ -14,8 +14,7 @@ def main(args):
     'date' : time.strftime("%d%b%Y"),}
 
   for i in range(0,3):
-    frmt6 = '6_results'
-    output['test{}_result'.format(i+1)]=R('Test {} result\nLine2'.format(i+1))
+    output['test{}_result'.format(i+1)]=R('Test {} result\nLine2\   \n Line3'.format(i+1))
     output['test{}_comment'.format(i+1)]='Test {} comment'.format(i+1)
 
   doc.render(output)
