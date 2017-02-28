@@ -41,4 +41,9 @@ print("Page Width: \t{}".format(pg_w))
 print("Page Height: \t{}".format(pg_h))
 doc.add_section()
 
+new03 = doc.add_section()
+new03.left_margin = Inches(0.25)
+new03.right_martin = Inches(0.75)
+doc.add_paragraph('Different Margins!')
+
 doc.save('output4.docx')
