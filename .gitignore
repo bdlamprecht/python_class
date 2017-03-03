@@ -33,4 +33,4 @@
 *.su
 
 # Swap files
-.swp
+*.swp
