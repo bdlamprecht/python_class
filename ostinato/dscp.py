@@ -23,6 +23,7 @@ from ostinato.protocols.mac_pb2 import Mac, mac
 # initialize the below variables appropriately to avoid manual input
 host_name = '9.0.49.183'
 tx_port_number = 3
+rx_port_number = 3
 
 # setup logging
 log = logging.getLogger(__name__)
@@ -45,6 +46,10 @@ try:
     # setup tx port list
     tx_port = ost_pb.PortIdList()
     tx_port.port_id.add().id = tx_port_number;
+
+    # setup rx port list
+    rx_port = ost_pb.PortIdList()
+    rx_port.port_id.add().id = rx_port_number;
 
     # ------------#
     # add streams #
@@ -87,7 +92,7 @@ try:
     p.Extensions[ip4].is_override_hdrlen = True
     p.Extensions[ip4].is_override_totlen = True
     p.Extensions[ip4].is_override_cksum = True
-    p.Extensions[ip4].tos = 0x46
+    p.Extensions[ip4].tos = 0xb8
     p.Extensions[ip4].totlen = 46
     p.Extensions[ip4].proto = 0x11
     p.Extensions[ip4].cksum = 0x26da
@@ -136,7 +141,7 @@ try:
     p.Extensions[ip4].is_override_hdrlen = True
     p.Extensions[ip4].is_override_totlen = True
     p.Extensions[ip4].is_override_cksum = True
-    p.Extensions[ip4].tos = 0x26
+    p.Extensions[ip4].tos = 0x68
     p.Extensions[ip4].totlen = 46
     p.Extensions[ip4].proto = 0x11
     p.Extensions[ip4].cksum = 0x26da
@@ -185,7 +190,7 @@ try:
     p.Extensions[ip4].is_override_hdrlen = True
     p.Extensions[ip4].is_override_totlen = True
     p.Extensions[ip4].is_override_cksum = True
-    p.Extensions[ip4].tos = 0x18
+    p.Extensions[ip4].tos = 0x48
     p.Extensions[ip4].totlen = 46
     p.Extensions[ip4].proto = 0x11
     p.Extensions[ip4].cksum = 0x26da
@@ -259,8 +264,13 @@ try:
 
     drone.modifyStream(stream_cfg)
     # clear tx/rx stats
-    log.info('clearing tx stats')
+    log.info('clearing tx/rx stats')
     drone.clearStats(tx_port)
+    drone.clearStats(rx_port)
+
+    # start rx capture
+    log.info('starting capture')
+    drone.startCapture(rx_port)
 
     log.info('starting transmit')
     drone.startTransmit(tx_port)
@@ -280,12 +290,21 @@ try:
     # stop transmit and capture
     log.info('stopping transmit')
     drone.stopTransmit(tx_port)
+    log.info('stopping capture')
+    drone.stopCapture(rx_port)
 
     # get tx stats
     log.info('retreiving stats')
     tx_stats = drone.getStats(tx_port)
 
     log.info('tx pkts = %d' % (tx_stats.port_stats[0].tx_pkts))
+
+    # retrieve and dump received packets
+    log.info('getting Rx capture buffer')
+    buff = drone.getCaptureBuffer(rx_port.port_id[0])
+    drone.saveCaptureBuffer(buff, 'dscp.pcap')
+    log.info('dumping Rx capture buffer')
+    os.system('tshark -r dscp.pcap')
 
     # delete streams
     log.info('deleting tx_streams')
