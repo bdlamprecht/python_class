@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from docx import Document
+from docx.shared import Pt
 from docx.enum.style import WD_STYLE_TYPE
 
 doc = Document('input.docx')
@@ -42,11 +43,30 @@ for i in range(1,3):
   doc.add_paragraph('[junos command here]', style='output')
 
   doc.add_paragraph('Test Output', style='desc_header')
-  output_table = doc.add_table(1,1,style='test_output')
-  output_table.rows[0].text = '{{ test{}_results }}'.format(i)
+
+  # This section is to get the font size in the following table to be correct size.
+  outp = doc.add_paragraph('This is some text')
+  outp = doc.paragraphs[-1]
+  outp.style.font.size = Pt(8)
+  p = outp._element
+  p.getparent().remove(p)
+  p._p = p._element = None
+
+  o_table = doc.add_table(1,1,style='test_output')
+  o_table.cell(0,0).text = '{{ test{}_results }}'.format(i)
+  #o_table.cell(0,0).add_paragraph('{{ test{}_results }}'.format(i),style='output_sm')
+
+  # This section is to get the font size in the following table to be correct size.
+  comm = doc.add_paragraph('This is some text')
+  comm = doc.paragraphs[-1]
+  comm.style.font.size = Pt(10)
+  p = comm._element
+  p.getparent().remove(p)
+  p._p = p._element = None
 
   doc.add_paragraph('Test Comments', style='desc_header')
-  comment_table = doc.add_table(1,1,style='test_comment')
-  comment_table.rows[0].text = '{{ test{}_comment }}'.format(i)
+  c_table = doc.add_table(1,1,style='test_comment')
+  c_table.cell(0,0).text = '{{ test{}_comment }}'.format(i)
+  #c_table.cell(0,0).add_paragraph('{{ test{}_comment }}'.format(i),style='normal_text')
 
 doc.save('report.docx')
