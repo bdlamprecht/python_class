@@ -35,3 +35,5 @@
 # Swapfiles
 *.swp
 *.TMP
+~*
+
