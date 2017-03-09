@@ -49,4 +49,4 @@ for i in range(1,3):
   comment_table = doc.add_table(1,1,style='test_comment')
   comment_table.rows[0].text = '{{ test{}_comment }}'.format(i)
 
-doc.save('styles.docx')
+doc.save('report.docx')
